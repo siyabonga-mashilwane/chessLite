@@ -13,10 +13,12 @@ This is a repository on the different chess engine versions. Each version has a 
 
 ## Version 1
 ### Goals
-[] Bitboard representation
-[] Successful rules
-[] Move generator
-[] Simple Search Implementation
-[] Simple evaluation function (Material evaluation)
-[] Proper testing framework
-[] Proper debugging framework
+- [] Bitboard representation
+- [] Successful rules
+- [] Move generator
+- [] Simple Search Implementation
+- [] Simple evaluation function (Material evaluation)
+- [] Proper testing framework
+- [] Proper debugging framework
+#### The following is the workflow we will be using for version 1
+![Transpose](https://github.com/user-attachments/assets/43312057-d0ad-44bd-be93-ff7ae045f93e)
