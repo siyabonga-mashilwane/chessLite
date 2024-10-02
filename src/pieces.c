@@ -1,22 +1,152 @@
-#include "pieces.h"
+#include "./pieces.h"
 #include <stdio.h>
-unsigned long long K = 0;
-unsigned long long Q = 0;
-unsigned long long B = 0;
-unsigned long long N = 0;
-unsigned long long R = 0;
-unsigned long long P = 0;
+#include "./types.h"
 
-unsigned long long k = 0;
-unsigned long long q = 0;
-unsigned long long b = 0; 
-unsigned long long n = 0;
-unsigned long long r = 0;
-unsigned long long p = 0;
+//Capital letters as White and lowecase letters as black
+static U64 K = 0;
+static U64 Q = 0;
+static U64 B = 0;
+static U64 N = 0;
+static U64 R = 0;
+static U64 P = 0;
 
-void print_binary(unsigned long long n) {
+static U64 k = 0;
+static U64 q = 0;
+static U64 b = 0; 
+static U64 n = 0;
+static U64 r = 0;
+static U64 p = 0;
+
+static U64 game = 0;//This variable is used to store the game state bitboard
+
+//Getters and setters for the game state and chess pieces
+U64 get_K(){
+    return K;
+}
+U64 get_Q(){
+    return Q;
+}
+U64 get_B(){
+    return B;
+}
+U64 get_N(){
+    return N;
+}
+U64 get_R(){
+    return R;
+}
+U64 get_P(){
+    return P;
+}
+
+U64 get_k(){
+    return k;
+}
+U64 get_q(){
+    return q;
+}
+U64 get_b(){
+    return b;
+}
+U64 get_n(){
+    return n;
+}
+U64 get_r(){
+    return r;
+}
+U64 get_p(){
+    return p;
+}
+
+U64 get_game(){
+    return game;
+}
+
+//setters
+void set_K(U64 val){
+    K = val;
+    updateGame();
+}
+void set_Q(U64 val){
+    Q = val;
+    updateGame();
+}
+void set_B(U64 val){
+    B = val;
+    updateGame();
+}
+void set_N(U64 val){
+    N = val;
+    updateGame();
+}
+void set_R(U64 val){
+    R = val;
+    updateGame();
+}
+void set_P(U64 val){
+    P = val;
+    updateGame();
+}
+
+void set_k(U64 val){
+    k = val;
+    updateGame();
+}
+void set_q(U64 val){
+    q = val;
+    updateGame();
+}
+void set_b(U64 val){
+    b = val;
+    updateGame();
+}
+void set_n(U64 val){
+    n = val;
+    updateGame();
+}
+void set_r(U64 val){
+    r = val;
+    updateGame();
+}
+void set_p(U64 val){
+    p = val;
+    updateGame();
+}
+
+void set_game(U64 val){
+    game = val;
+    
+}
+
+//The following are the masks of move generators
+U64 notAFile = 0xfefefefefefefefe;
+U64 notHFile = 0x7f7f7f7f7f7f7f7f;
+
+//A function that will Update the game bitboard
+void updateGame(){
+    game = K | Q | B | N | R | P | k | q | b | n | r | p;
+}
+//A function that will produce a bitboard of empty spaces on the bitboard.
+U64 createEmptySquares(){
+    return ~game;
+}
+//A function that will print the U64 into a binary string
+void print_binary(U64 n) {
     for (int i = sizeof(n) * 8 - 1; i >= 0; i--) {
         printf("%llu", (n >> i) & 1);  // Print each bit from MSB to LSB
+    }
+    printf("\n");
+}
+//A function that will print the U64 into a binary matrix/chess board
+void print_matrix(U64 word) {
+    for (int row = 7; row >= 0; row--) {
+        for (int col = 7; col >= 0; col--) {
+            // Extract the bit at position (row * 8 + col)
+            int bit_position = row * 8 + col;
+            U64 mask = (U64)1 << bit_position;
+            printf("%d ", (word & mask) ? 1 : 0);
+        }
+        printf("\n");  // Newline for the next row
     }
     printf("\n");
 }
@@ -28,7 +158,7 @@ void init_rack(char board[8][8])
         
         for (int j = 0; j < 8; j++)
         {
-            unsigned long long temp = 1;
+            U64 temp = 1;
             int shift = 63 - ((i*8) + j); //There are 64 squares and on those 1 of them is occupied by 1 so 63  available i*8+j are offsets to normalise to left bitshift
             temp = temp << shift;
             switch (board[i][j])
@@ -74,5 +204,89 @@ void init_rack(char board[8][8])
             }
         }
     }
-    
+    updateGame();
 }
+
+//One step Move generators
+U64 eastOne(U64 bitboard){
+    return (bitboard & notAFile) >> 1;
+}
+U64 northEastOne(U64 bitboard){
+    return (bitboard & notAFile) << 7;
+}
+U64 southEastOne(U64 bitboard){
+    return (bitboard & notAFile) >> 9;
+}
+U64 westOne(U64 bitboard){
+    return (bitboard & notHFile) << 1;
+}
+U64 northWestOne(U64 bitboard){
+    return (bitboard & notHFile) << 9;
+}
+U64 southWestOne(U64 bitboard){
+    return (bitboard & notHFile) >> 7;
+}
+U64 northOne(U64 bitboard){
+    return bitboard << 8;
+}
+U64 southOne(U64 bitboard){
+    return bitboard >> 8;
+}
+
+//Pawn push move generation
+
+//Returns possible moves for a white pawn in one push
+U64 wSinglePush(U64 wPawns, U64 emptySquares){
+    return northOne(wPawns) & emptySquares;
+}
+//Returns possible moves for a white pawn in double push
+U64 wDoublePush(U64 wPawns, U64 emptySquares){
+    U64 row4 = 0x00000000FF000000; //sets all values in row 4 to be 1
+    U64 pushOne = wSinglePush(wPawns,emptySquares);
+    return northOne(pushOne) & emptySquares & row4;
+}
+
+//Returns possible moves for a black pawn in one push
+U64 bSinglePush(U64 bPawns, U64 emptySquares){
+    return southOne(bPawns) & emptySquares;
+}
+//Returns possible moves for a black pawn in double push
+U64 bDoublePush(U64 bPawns, U64 emptySquares){
+    U64 row5 = 0x000000FF00000000; //sets all values in row 4 to be 1
+    U64 pushOne = bSinglePush(bPawns,emptySquares);
+    return southOne(pushOne) & emptySquares & row5;
+}
+
+//Analogy, if moving the white pawns up against the empty squares gives destination squares then moving 
+//the empty squares against the white pawn will return the source positions so:
+U64 wSinglePushSources(U64 wPawns, U64 emptySquares){
+    return southOne(emptySquares) & wPawns;
+}
+U64 wDoublePushSources(U64 wPawns, U64 emptySquares){
+    U64 row4 = 0x00000000FF000000;
+    U64 emptyRow3 = southOne(emptySquares & row4) & emptySquares; //If the empty squares on rank 4 can be moved to rank3 
+    return wSinglePushSources(wPawns, emptyRow3);
+}
+
+
+U64 bSinglePushSources(U64 bPawns, U64 emptySquares){
+    return northOne(emptySquares) & bPawns;
+}
+
+U64 bDoublePushSources(U64 bPawns, U64 emptySquares){
+    U64 row5 = 0x000000FF00000000;
+    U64 emptyRow6 = northOne(emptySquares & row5) & emptySquares;
+    return bSinglePushSources(bPawns, emptyRow6);
+}
+
+
+
+
+/*{'r','n','b','q','k','b','n','r'},
+        {'p','p','p','p','p','p','p','p'},
+        {' ',' ',' ',' ',' ',' ',' ',' '},
+        {' ',' ',' ',' ',' ',' ',' ',' '},
+        {' ',' ',' ',' ',' ',' ',' ',' '},
+        {' ',' ',' ',' ',' ',' ',' ',' '},
+        {'P','P','P','P','P','P','P','P'},
+        {'R','N','B','Q','K','B','N','R'}*/
