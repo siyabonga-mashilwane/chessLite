@@ -15,7 +15,7 @@ int main(){
     };
     printf("\n White bitboards \n");
     init_rack(board);
-    print_matrix(get_K());
+    /*print_matrix(get_K());
     print_matrix(get_Q());
     print_matrix(get_B());
     print_matrix(get_N());
@@ -35,7 +35,8 @@ int main(){
     printf("\n");
     print_matrix(bDoublePushSources(get_p(), createEmptySquares()));
     printf("\n");
-    print_matrix(bSinglePushSources(get_p(), createEmptySquares()));
-
+    print_matrix(bSinglePushSources(get_p(), createEmptySquares()));*/
+    print_matrix(notHFile);
+    print_matrix(kingMoveTargets(get_k(), createEmptySquares()));
     return 0;
 }

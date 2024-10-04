@@ -2,7 +2,7 @@
 #define PIECES_H
 #include "./types.h"
 
-//The following are getters and setters of the pieces
+//The following are getters and setters of the pieces where uppercase is white and lowercase is black
 U64 get_K();
 U64 get_Q();
 U64 get_B();
@@ -38,6 +38,11 @@ void set_game(U64 val);
 //The following are the masks of move generators
 extern U64 notAFile;
 extern U64 notHFile;
+extern U64 notBFile;
+extern U64 notGFile;
+extern U64 notABFile;
+extern U64 notGHFile;
+
 
 //Use this function to create a bitboard of empty spaces
 U64 createEmptySquares();
@@ -74,5 +79,11 @@ U64 wSinglePushSources(U64 wPawns, U64 emptySquares); //Returns all sources of w
 U64 wDoublePushSources(U64 wPawns, U64 emptySquares); //Returns all sources of white pawn squares you can double push
 U64 bSinglePushSources(U64 bPawns, U64 emptySquares); //Returns all sources of Black pawn squares you can single push
 U64 bDoublePushSources(U64 bPawns, U64 emptySquares); //Returns all sources of Black pawn squares you can double push
+
+//Knight moving generators
+U64 knightMoveTargets(U64 knights);
+
+//King moving generators
+U64 kingMoveTargets(U64 king, U64 empty);
 
 #endif

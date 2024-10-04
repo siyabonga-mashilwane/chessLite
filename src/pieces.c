@@ -1,6 +1,11 @@
 #include "./pieces.h"
 #include <stdio.h>
+#include <math.h>
 #include "./types.h"
+
+//Static function prototypes
+static void kingMoveTargetsInitialiser();
+static U64 kingMoveTargetsHelper(U64 king);
 
 //Capital letters as White and lowecase letters as black
 static U64 K = 0;
@@ -17,7 +22,18 @@ static U64 n = 0;
 static U64 r = 0;
 static U64 p = 0;
 
+U64 kingMoves[64];//A list of all possible moves a king can move given a position on the board
+
 static U64 game = 0;//This variable is used to store the game state bitboard
+
+//The following are the masks of move generators
+    //The masks make sure that the pieces do not go off bound
+U64 notAFile = 0xfefefefefefefefe;
+U64 notHFile = 0x7f7f7f7f7f7f7f7f;
+U64 notBFile = 0xbfbfbfbfbfbfbfbf;
+U64 notGFile = 0xfdfdfdfdfdfdfdfd;
+U64 notABFile = 0x3f3f3f3f3f3f3f3f;
+U64 notGHFile = 0xfcfcfcfcfcfcfcfc;
 
 //Getters and setters for the game state and chess pieces
 U64 get_K(){
@@ -118,10 +134,6 @@ void set_game(U64 val){
     
 }
 
-//The following are the masks of move generators
-U64 notAFile = 0xfefefefefefefefe;
-U64 notHFile = 0x7f7f7f7f7f7f7f7f;
-
 //A function that will Update the game bitboard
 void updateGame(){
     game = K | Q | B | N | R | P | k | q | b | n | r | p;
@@ -204,6 +216,7 @@ void init_rack(char board[8][8])
             }
         }
     }
+    kingMoveTargetsInitialiser();
     updateGame();
 }
 
@@ -279,6 +292,50 @@ U64 bDoublePushSources(U64 bPawns, U64 emptySquares){
     return bSinglePushSources(bPawns, emptyRow6);
 }
 
+//Knight moving generators
+    
+//Returns all the possible moves for all the knights on a particular bitboard
+U64 knightMoveTargets(U64 knights){
+    U64 noNoEast = (knights << 17) & notAFile;
+    U64 noNoWest = (knights << 18) & notHFile;
+    U64 soSoEast = (knights >> 18) & notAFile;
+    U64 soSoWest = (knights >> 17) & notHFile;
+    U64 weWENorth = (knights << 10) & notGHFile;
+    U64 weWeSouth = (knights >> 6) & notGHFile;
+    U64 eaEaNorth = (knights << 6) & notABFile;
+    U64 eaEaSouth = (knights >> 10) & notABFile;
+
+    return (noNoEast | noNoWest | soSoEast | soSoWest | weWENorth | weWeSouth | eaEaNorth | eaEaSouth);
+}
+
+//King move generators
+
+//Helper function for calculating all the direction moves of a king
+static U64 kingMoveTargetsHelper(U64 king){
+    U64 noWest = northWestOne(king);
+    U64 soWest = southWestOne(king);
+    U64 soEast = southEastOne(king);
+    U64 noEast = northEastOne(king);
+    U64 north = northOne(king);
+    U64 south = southOne(king);
+    U64 west = westOne(king);
+    U64 east = eastOne(king);
+
+    return (noWest | soWest | soEast | noEast | north | south | west | east);
+}
+//Ran at the start of the game to initialize the kingmoves array which holds all possible moves of a king in a board.
+static void kingMoveTargetsInitialiser(){
+    U64 king = 1;
+    for (size_t i = 0; i < 64; i++, king = king<<1)
+    {
+        kingMoves[i] = kingMoveTargetsHelper(king);
+    }
+}
+//A function that returns the possible moves of a king in a given game state/position.
+U64 kingMoveTargets(U64 king, U64 empty){
+    int index = (int)log2(king);
+    return kingMoves[index] & empty;
+}
 
 
 
