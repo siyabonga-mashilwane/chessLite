@@ -3,9 +3,15 @@
 #include <math.h>
 #include "./types.h"
 
+#define get_bit(bitboard, square) (bitboard & (1ULL << square))
+#define pop_bit(bitboard, square) (get_bit(bitboard, square) ? bitboard ^= (1ULL << square) : 0)
+#define BOARDS_SQUARES  64
+#define ROOK_COMBINATIONS 4095
+#define BISHOP_COMBINATIONS 512
 //Static function prototypes
-static void kingMoveTargetsInitialiser();
 static U64 kingMoveTargetsHelper(U64 king);
+static U64 bishop_mask_generator(int index);
+static U64 rook_mask_generator(int index);
 
 //Capital letters as White and lowecase letters as black
 static U64 K = 0;
@@ -22,12 +28,31 @@ static U64 n = 0;
 static U64 r = 0;
 static U64 p = 0;
 
-U64 kingMoves[64];//A list of all possible moves a king can move given a position on the board
+static U64 kingMoves[BOARDS_SQUARES];//A list of all possible moves a king can move given a position on the board
+static U64 bishopMasks[BOARDS_SQUARES]; //A list of all possible masks a bishop can have given a position on the board
+static U64 rookMasks[BOARDS_SQUARES]; //A list of all possible rook masks a rook can have given a position on the booard
+U64 bishop_attacks[BOARDS_SQUARES][BISHOP_COMBINATIONS]; //Each square for a bishop has a maximum of 512 occupancy combination combinations  (2^9) to consider hence the 512 
+U64 rook_attacks[BOARDS_SQUARES][ROOK_COMBINATIONS]; //Each square for a rook has a maximum of 4096 occupancy combinations (2^12) to consider hence 4096
 
 static U64 game = 0;//This variable is used to store the game state bitboard
 
+static const U64 debruijn_number = 0x07EDD5E59A4E28C2ULL; //A special 64bit debruijn master set/sequence to extract some subsets
+
+//An array of debruijn possible positions, it received a debruijn sequence (subset) number then returns the index of that position on the
+//true bitboards
+static const int debruijn_hash[BOARDS_SQUARES] = {
+   63,  0, 58,  1, 59, 47, 53,  2,
+   60, 39, 48, 27, 54, 33, 42,  3,
+   61, 51, 37, 40, 49, 18, 28, 20,
+   55, 30, 34, 11, 43, 14, 22,  4,
+   62, 57, 46, 52, 38, 26, 32, 41,
+   50, 36, 17, 19, 29, 10, 13, 21,
+   56, 45, 25, 31, 35, 16,  9, 12,
+   44, 24, 15,  8, 23,  7,  6,  5
+};
+
 //The following are the masks of move generators
-    //The masks make sure that the pieces do not go off bound
+ //The masks make sure that the pieces do not go off bound
 U64 notAFile = 0xfefefefefefefefe;
 U64 notHFile = 0x7f7f7f7f7f7f7f7f;
 U64 notBFile = 0xbfbfbfbfbfbfbfbf;
@@ -142,6 +167,21 @@ void updateGame(){
 U64 createEmptySquares(){
     return ~game;
 }
+
+//It returns an index of the isolated LSB from the bitboard, receives a chess piece bitboard
+int debruijn_BitScan(U64 bitboard){
+    return debruijn_hash[((bitboard & -bitboard) * debruijn_number)>> 58];
+}
+
+int bitCount(U64 val){
+    int n = 0;
+    while(val){
+        val &= (val -1);
+        n++;
+    }
+    return n;
+}
+
 //A function that will print the U64 into a binary string
 void print_binary(U64 n) {
     for (int i = sizeof(n) * 8 - 1; i >= 0; i--) {
@@ -216,7 +256,8 @@ void init_rack(char board[8][8])
             }
         }
     }
-    kingMoveTargetsInitialiser();
+    init_king_targets();
+    init_rook_masks();
     updateGame();
 }
 
@@ -324,21 +365,172 @@ static U64 kingMoveTargetsHelper(U64 king){
     return (noWest | soWest | soEast | noEast | north | south | west | east);
 }
 //Ran at the start of the game to initialize the kingmoves array which holds all possible moves of a king in a board.
-static void kingMoveTargetsInitialiser(){
+void init_king_targets(){
     U64 king = 1;
-    for (size_t i = 0; i < 64; i++, king = king<<1)
+    for (size_t i = 0; i < BOARDS_SQUARES; i++, king = king<<1)
     {
         kingMoves[i] = kingMoveTargetsHelper(king);
     }
 }
+
 //A function that returns the possible moves of a king in a given game state/position.
-U64 kingMoveTargets(U64 king, U64 empty){
+U64 get_king_target(U64 king, U64 empty){
     int index = (int)log2(king);
     return kingMoves[index] & empty;
 }
 
+//Bishop utilities
+
+// A function that generates bitmasks for a bishop given an index
+static U64 bishop_mask_generator(int index){
+    U64 mask = 0ULL;
+    //break down index to int rank and file
+    int r = index/8;
+    int f = index % 8;
+    int i,j;
+    //all the +9 bits from the current index
+    for (i = r+1, j = f+1; i <= 6 && j<=6; i++, j++)
+    {
+        mask |= (1ULL << i*8 + j);
+    }
+    //all the +7 bits from the current index
+    for (i = r+1, j = f-1; i <= 6 && j>0; i++, j--)
+    {
+        mask |= (1ULL << i*8 + j);
+    }
+    //all the -7 bits from the current index
+    for (i = r-1, j = f+1; i > 0 && j<=6; i--, j++)
+    {
+        mask |= (1ULL << i*8 + j);
+    }
+    //all the -9 bits from the current index
+    for (i = r-1, j = f-1; i > 0 && j > 0; i--, j--)
+    {
+        mask |= (1ULL << i*8 + j);
+    }
+    return mask;
+
+}
+
+void initialise_bishop_masks(){
+    for (int i = 0; i < BOARDS_SQUARES; i++){
+        bishopMasks[i] = bishop_mask_generator(i);
+    }
+}
+
+U64 get_bishop_mask(int index) {
+    return bishopMasks[index];
+}
 
 
+//Rook utilities
+
+void init_rook_masks(){
+    for (size_t i = 0; i < BOARDS_SQUARES; i++)
+    {
+        rookMasks[i] = rook_mask_generator(i); 
+    }
+}
+
+static U64 rook_mask_generator(int index){
+    U64 mask = 0ULL;
+    //break down index to int rank and file
+    int r = index/8;
+    int f = index % 8;
+    int i,j;
+    for (i = r+1; i < 7; i++)
+    {
+        mask |= (1ULL << i*8 + f);
+    }
+    for (i = r-1; i > 0; i--)
+    {
+        mask |= (1ULL << i*8 + f);
+    }
+    for (j = f+1; j < 7; j++)
+    {
+        mask |= (1ULL << r*8 + j);
+    }
+    for (j = f-1; j > 0; j--)
+    {
+        mask |= (1ULL << r*8 + j);
+    }
+    return mask;
+}
+
+U64 get_rook_mask(int index){
+    return rookMasks[index];
+}
+
+U64 rook_attack(int square_index, U64 occupancy){
+    U64 attack = 1ULL << square_index;
+    U64 north = 0ULL;
+    U64 south = 0ULL;
+    U64 west = 0ULL;
+    U64 east = 0ULL;
+    //Starting with north, we calculate the path that a rook can take till its first encountered piece in the board
+    for (int rank = square_index/8 + 1; rank < 7; rank++)
+    {
+        north |= attack << 8;
+        if (get_bit(north, rank*8 + square_index%8) ^ get_bit(occupancy,rank*8 + square_index%8))
+        {
+            break;
+        }
+    }
+
+
+    
+    
+}
+
+//A function to return all possible combinations of occupancy given a board position
+//attack_mask -> a variable that isolates all possible paths a sliding piece can go, except the edges and the position of the piece e.g b3
+//bits_in_mask -> the number of bits that exist in the mask, use bitCount to determine the number of bits in the mask
+/*
+    index - a value ranging from 0 -> 2**(bits_in_mask -1), represents a state of combination.
+    0 gives the zero'th combination you can get in that position.
+    1 gives the 1st combination you can get in that position
+    2 gives the 2nd combination you can get in that position
+    .
+    .
+    .
+    (2**bits_in_mask -1), this will return the last combination you can get at that position, it tends to 
+    be the same as the attack_mask bitboard
+*/ 
+U64 set_occupancy(int index, U64 attack_mask, int bits_in_mask){
+    //initialise the occupancy bitboard
+    U64 occupancy = 0ULL;
+
+    //Loop through all bits in the mask and check if they exist in the current combination state
+    for (int i = 0; i < bits_in_mask; i++)
+    {
+        //get the ls1b of the attack mask
+        int square = debruijn_BitScan(attack_mask);
+
+        //set the ls1b to 0 so that we dont repeat it again
+        pop_bit(attack_mask, square);
+
+        //If current bit in the attack_mask exists in the current combination state then insert it into the occupancy
+        if(index & (1 << i)){
+            occupancy |= (1ULL << square);
+        }
+
+        print_matrix(occupancy);
+    }
+    return occupancy;
+}
+
+void set_sliding_attacks(){
+    for (size_t i = 0; i < BOARDS_SQUARES; i++)
+    {
+        // loop through all combinations of the rook
+        for(int j = 0; j < ROOK_COMBINATIONS; j++) {
+            U64  mask = get_rook_mask(i);
+            U64 rook_occupancy = set_occupancy(j, mask, bitCount(mask)); //calculate the j'th combination
+            rook_attacks[i][j] = rook_attack(i, rook_occupancy); //calculate the rook attack for the current occupancy combination 
+        }
+    }
+    
+}
 /*{'r','n','b','q','k','b','n','r'},
         {'p','p','p','p','p','p','p','p'},
         {' ',' ',' ',' ',' ',' ',' ',' '},

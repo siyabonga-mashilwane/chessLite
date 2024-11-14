@@ -7,11 +7,11 @@ int main(){
         {'r',' ','b','q','k',' ','n','r'},
         {'p','p','p','p',' ','p','p','p'},
         {' ',' ','n',' ',' ',' ',' ',' '},
-        {' ','B',' ',' ','p',' ',' ',' '},
+        {' ',' ',' ',' ','p',' ',' ',' '},
         {' ',' ',' ',' ','P',' ',' ',' '},
-        {'b',' ',' ',' ',' ','N',' ',' '},
+        {'b',' ',' ','B',' ','N',' ','R'},
         {'P','P','P','P',' ','P','P','P'},
-        {'R','N','B','Q','K',' ',' ','R'}
+        {' ','N','B','Q','K',' ',' ',' '}
     };
     printf("\n White bitboards \n");
     init_rack(board);
@@ -36,7 +36,11 @@ int main(){
     print_matrix(bDoublePushSources(get_p(), createEmptySquares()));
     printf("\n");
     print_matrix(bSinglePushSources(get_p(), createEmptySquares()));*/
-    print_matrix(notHFile);
-    print_matrix(kingMoveTargets(get_k(), createEmptySquares()));
+    //print_matrix(0x123456789ABCDEF0ULL);
+    //print_matrix(__builtin_bswap64(0x123456789ABCDEF0ULL));
+    U64 rook_mask = get_rook_mask(7);
+    print_matrix(rook_mask);
+    printf("\n");
+    print_matrix(set_occupancy(4095, rook_mask ,bitCount(rook_mask)));
     return 0;
 }
