@@ -92,7 +92,7 @@ void init_king_targets();
 U64 kingMoveTargets(U64 king, U64 empty);
 
 //Bishop utilities
-void initialise_bishop_masks();
+void init_bishop_masks();
 U64 get_bishop_mask(int index);
 U64 bishop_attack(int index, U64 occupancy);
 

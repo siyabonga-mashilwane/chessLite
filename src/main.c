@@ -41,7 +41,8 @@ int main(){
     //U64 rook_mask = get_rook_mask(7);
     //print_matrix(rook_mask);
     //printf("\n");
-    print_matrix(bishop_attack(23, get_game()));
+    U64 bishop_mask = get_bishop_mask(28);
+    print_matrix(set_occupancy(511,bishop_mask,bitCount(bishop_mask)));
     //printf("\n");
     //print_matrix(rook_attack(16, get_game()));
     return 0;

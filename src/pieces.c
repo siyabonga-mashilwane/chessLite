@@ -6,7 +6,7 @@
 #define get_bit(bitboard, square) (bitboard & (1ULL << square))
 #define pop_bit(bitboard, square) (get_bit(bitboard, square) ? bitboard ^= (1ULL << square) : 0)
 #define BOARDS_SQUARES  64
-#define ROOK_COMBINATIONS 4095
+#define ROOK_COMBINATIONS 4096
 #define BISHOP_COMBINATIONS 512
 //Static function prototypes
 static U64 kingMoveTargetsHelper(U64 king);
@@ -258,6 +258,7 @@ void init_rack(char board[8][8])
     }
     init_king_targets();
     init_rook_masks();
+    init_bishop_masks();
     updateGame();
 }
 
@@ -412,7 +413,7 @@ static U64 bishop_mask_generator(int index){
 
 }
 
-void initialise_bishop_masks(){
+void init_bishop_masks(){
     for (int i = 0; i < BOARDS_SQUARES; i++){
         bishopMasks[i] = bishop_mask_generator(i);
     }
@@ -613,8 +614,6 @@ U64 set_occupancy(int index, U64 attack_mask, int bits_in_mask){
         if(index & (1 << i)){
             occupancy |= (1ULL << square);
         }
-
-        print_matrix(occupancy);
     }
     return occupancy;
 }
