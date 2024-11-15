@@ -4,7 +4,7 @@
 
 int main(){
     char board[8][8] = {
-        {'r',' ','b','q','k',' ','n','r'},
+        {'r',' ',' ','q','k',' ','n','r'},
         {'p','p','p','p',' ','p','p','p'},
         {' ',' ','n',' ',' ',' ',' ',' '},
         {' ',' ',' ',' ','p',' ',' ',' '},
@@ -38,9 +38,11 @@ int main(){
     print_matrix(bSinglePushSources(get_p(), createEmptySquares()));*/
     //print_matrix(0x123456789ABCDEF0ULL);
     //print_matrix(__builtin_bswap64(0x123456789ABCDEF0ULL));
-    U64 rook_mask = get_rook_mask(7);
-    print_matrix(rook_mask);
-    printf("\n");
-    print_matrix(set_occupancy(4095, rook_mask ,bitCount(rook_mask)));
+    //U64 rook_mask = get_rook_mask(7);
+    //print_matrix(rook_mask);
+    //printf("\n");
+    print_matrix(bishop_attack(23, get_game()));
+    //printf("\n");
+    //print_matrix(rook_attack(16, get_game()));
     return 0;
 }

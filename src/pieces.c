@@ -422,6 +422,68 @@ U64 get_bishop_mask(int index) {
     return bishopMasks[index];
 }
 
+U64 bishop_attack(int square_index, U64 occupancy) {
+    U64 north_west = 0ULL;
+    U64 south_west = 0ULL;
+    U64 south_east = 0ULL;
+    U64 north_east = 0ULL;
+
+
+    int rank = square_index / 8;
+    int file = square_index % 8;
+    int count = square_index;
+    //Calculating the north west atatacks 
+    for ( count+=9, file+= 1, rank += 1 ; (file < 7) & (rank < 7); rank++, file++, count+=9)
+    {
+        north_west |= 1ULL << count;
+        //Break if attack ray meets piece on the board
+        if (get_bit(occupancy, count) & get_bit(north_west, count)) break;
+        
+    }
+    print_matrix(north_west);
+    //Simply reset the indexing variables for further use in other rays
+    rank = square_index / 8;
+    file = square_index % 8;
+    count = square_index;
+
+    //Calculating the north east atacks
+    for (count += 7, file -= 1, rank += 1; (rank < 7) & (file > 0); file--, rank++, count += 7)
+    {
+        north_east |= 1ULL << count;
+        //Break if attack ray meets piece on the board
+        if (get_bit(occupancy, count) & get_bit(north_east, count)) break;
+    }
+    print_matrix(north_east);
+
+    //Reseting the indexing variables for further use in other rays
+    rank = square_index / 8;
+    file = square_index % 8;
+    count = square_index;
+
+    //Calculating south west attacks
+    for ( count -= 7, rank--, file++; (file < 7) & (rank > 0); count -= 7, rank--, file++)
+    {
+        south_west |= 1ULL << count;
+        //Break if attack ray meets piece on the board
+        if (get_bit(occupancy, count) & get_bit(south_west, count)) break;
+    }
+    print_matrix(south_west);
+
+    //Reseting the indexing variables for further use in other rays
+    rank = square_index / 8;
+    file = square_index % 8;
+    count = square_index;
+
+    //Calculating south east attacks
+    for( count -= 9, rank--, file--; (file > 0) & (rank > 0); count -= 9, rank--, file--){
+        south_east |= 1ULL << count;
+        //Break if attack ray meets piece on the board
+        if (get_bit(occupancy, count) & get_bit(south_east, count)) break;
+    }
+    print_matrix(south_east);
+    
+    return south_east | south_west | north_east | north_west;
+}
 
 //Rook utilities
 
@@ -462,24 +524,62 @@ U64 get_rook_mask(int index){
 }
 
 U64 rook_attack(int square_index, U64 occupancy){
-    U64 attack = 1ULL << square_index;
+
     U64 north = 0ULL;
     U64 south = 0ULL;
     U64 west = 0ULL;
     U64 east = 0ULL;
+
+
+    int count = square_index;
+    int rank = square_index / 8; 
+    int file = square_index % 8;
     //Starting with north, we calculate the path that a rook can take till its first encountered piece in the board
-    for (int rank = square_index/8 + 1; rank < 7; rank++)
+    for (rank += 1, count += 8; rank < 7; rank++, count+= 8)
     {
-        north |= attack << 8;
-        if (get_bit(north, rank*8 + square_index%8) ^ get_bit(occupancy,rank*8 + square_index%8))
-        {
-            break;
-        }
+        north |= 1ULL << count;
+        //Break if attack ray meets piece on the board
+        if (get_bit(occupancy, count) & get_bit(north,count)) break;
+    }
+    //Resetting the indexing variables for further use in other rays
+    count = square_index;
+    rank = square_index / 8; 
+    file = square_index % 8;
+
+    //calculating south ray
+    for ( count -= 8, rank--; rank > 0; rank--, count -= 8)
+    {
+        south |= 1ULL << count;
+        //Break if attack ray meets piece on the board
+        if (get_bit(occupancy, count) & get_bit(south,count)) break;
+    }
+    
+    count = square_index;
+    rank = square_index / 8; 
+    file = square_index % 8;
+
+    //calculating west ray
+    for ( count += 1, file+= 1; file < 7; file++, count++)
+    {
+        west |= 1ULL << count;
+        //Break if attack ray meets piece on the board
+        if (get_bit(occupancy, count) & get_bit(west,count)) break;
     }
 
+    count = square_index;
+    rank = square_index / 8; 
+    file = square_index % 8;
 
-    
-    
+    //calculating east ray
+    for ( count -= 1, file-= 1; file > 0; file--, count--)
+    {
+        west |= 1ULL << count;
+        //Break if attack ray meets piece on the board
+        if (get_bit(occupancy, count) & get_bit(west,count)) break;
+        
+    }
+
+    return north | west | east | south;
 }
 
 //A function to return all possible combinations of occupancy given a board position
@@ -527,6 +627,13 @@ void set_sliding_attacks(){
             U64  mask = get_rook_mask(i);
             U64 rook_occupancy = set_occupancy(j, mask, bitCount(mask)); //calculate the j'th combination
             rook_attacks[i][j] = rook_attack(i, rook_occupancy); //calculate the rook attack for the current occupancy combination 
+        }
+
+        //Loop through all combinations of the bishop combinations
+        for(int k = 0; k < BISHOP_COMBINATIONS; k++){
+            U64 mask = get_bishop_mask(k);
+            U64 bishop_occupancy = set_occupancy(k, mask, bitCount(mask));
+            bishop_attacks[i][k] = bishop_attack(i, bishop_occupancy);
         }
     }
     
