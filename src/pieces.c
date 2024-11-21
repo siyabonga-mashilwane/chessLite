@@ -36,29 +36,14 @@ U64 rook_attacks[BOARDS_SQUARES][ROOK_COMBINATIONS]; //Each square for a rook ha
 
 static U64 game = 0;//This variable is used to store the game state bitboard
 
-static const U64 debruijn_number = 0x07EDD5E59A4E28C2ULL; //A special 64bit debruijn master set/sequence to extract some subsets
-
-//An array of debruijn possible positions, it received a debruijn sequence (subset) number then returns the index of that position on the
-//true bitboards
-static const int debruijn_hash[BOARDS_SQUARES] = {
-   63,  0, 58,  1, 59, 47, 53,  2,
-   60, 39, 48, 27, 54, 33, 42,  3,
-   61, 51, 37, 40, 49, 18, 28, 20,
-   55, 30, 34, 11, 43, 14, 22,  4,
-   62, 57, 46, 52, 38, 26, 32, 41,
-   50, 36, 17, 19, 29, 10, 13, 21,
-   56, 45, 25, 31, 35, 16,  9, 12,
-   44, 24, 15,  8, 23,  7,  6,  5
-};
-
 //The following are the masks of move generators
  //The masks make sure that the pieces do not go off bound
-U64 notAFile = 0xfefefefefefefefe;
-U64 notHFile = 0x7f7f7f7f7f7f7f7f;
-U64 notBFile = 0xbfbfbfbfbfbfbfbf;
-U64 notGFile = 0xfdfdfdfdfdfdfdfd;
-U64 notABFile = 0x3f3f3f3f3f3f3f3f;
-U64 notGHFile = 0xfcfcfcfcfcfcfcfc;
+const U64 notAFile = 0xfefefefefefefefe;
+const U64 notHFile = 0x7f7f7f7f7f7f7f7f;
+const U64 notBFile = 0xbfbfbfbfbfbfbfbf;
+const U64 notGFile = 0xfdfdfdfdfdfdfdfd;
+const U64 notABFile = 0x3f3f3f3f3f3f3f3f;
+const U64 notGHFile = 0xfcfcfcfcfcfcfcfc;
 
 //Getters and setters for the game state and chess pieces
 U64 get_K(){
@@ -168,10 +153,7 @@ U64 createEmptySquares(){
     return ~game;
 }
 
-//It returns an index of the isolated LSB from the bitboard, receives a chess piece bitboard
-int debruijn_BitScan(U64 bitboard){
-    return debruijn_hash[((bitboard & -bitboard) * debruijn_number)>> 58];
-}
+
 
 int bitCount(U64 val){
     int n = 0;
@@ -195,7 +177,7 @@ void print_matrix(U64 word) {
         for (int col = 7; col >= 0; col--) {
             // Extract the bit at position (row * 8 + col)
             int bit_position = row * 8 + col;
-            U64 mask = (U64)1 << bit_position;
+            U64 mask = 1ULL << bit_position;
             printf("%d ", (word & mask) ? 1 : 0);
         }
         printf("\n");  // Newline for the next row
@@ -434,7 +416,7 @@ U64 bishop_attack(int square_index, U64 occupancy) {
     int file = square_index % 8;
     int count = square_index;
     //Calculating the north west atatacks 
-    for ( count+=9, file+= 1, rank += 1 ; (file < 7) & (rank < 7); rank++, file++, count+=9)
+    for ( count+=9, file+= 1, rank += 1 ; (file <= 7) && (rank <= 7); rank++, file++, count+=9)
     {
         north_west |= 1ULL << count;
         //Break if attack ray meets piece on the board
@@ -448,7 +430,7 @@ U64 bishop_attack(int square_index, U64 occupancy) {
     count = square_index;
 
     //Calculating the north east atacks
-    for (count += 7, file -= 1, rank += 1; (rank < 7) & (file > 0); file--, rank++, count += 7)
+    for (count += 7, file -= 1, rank += 1; (rank <= 7) && (file >= 0); file--, rank++, count += 7)
     {
         north_east |= 1ULL << count;
         //Break if attack ray meets piece on the board
@@ -462,7 +444,7 @@ U64 bishop_attack(int square_index, U64 occupancy) {
     count = square_index;
 
     //Calculating south west attacks
-    for ( count -= 7, rank--, file++; (file < 7) & (rank > 0); count -= 7, rank--, file++)
+    for ( count -= 7, rank--, file++; (file <= 7) && (rank >= 0); count -= 7, rank--, file++)
     {
         south_west |= 1ULL << count;
         //Break if attack ray meets piece on the board
@@ -476,7 +458,7 @@ U64 bishop_attack(int square_index, U64 occupancy) {
     count = square_index;
 
     //Calculating south east attacks
-    for( count -= 9, rank--, file--; (file > 0) & (rank > 0); count -= 9, rank--, file--){
+    for( count -= 9, rank--, file--; (file >= 0) && (rank >= 0); count -= 9, rank--, file--){
         south_east |= 1ULL << count;
         //Break if attack ray meets piece on the board
         if (get_bit(occupancy, count) & get_bit(south_east, count)) break;
@@ -536,7 +518,7 @@ U64 rook_attack(int square_index, U64 occupancy){
     int rank = square_index / 8; 
     int file = square_index % 8;
     //Starting with north, we calculate the path that a rook can take till its first encountered piece in the board
-    for (rank += 1, count += 8; rank < 7; rank++, count+= 8)
+    for (rank += 1, count += 8; rank <= 7; rank++, count+= 8)
     {
         north |= 1ULL << count;
         //Break if attack ray meets piece on the board
@@ -548,7 +530,7 @@ U64 rook_attack(int square_index, U64 occupancy){
     file = square_index % 8;
 
     //calculating south ray
-    for ( count -= 8, rank--; rank > 0; rank--, count -= 8)
+    for ( count -= 8, rank--; rank >= 0; rank--, count -= 8)
     {
         south |= 1ULL << count;
         //Break if attack ray meets piece on the board
@@ -560,7 +542,7 @@ U64 rook_attack(int square_index, U64 occupancy){
     file = square_index % 8;
 
     //calculating west ray
-    for ( count += 1, file+= 1; file < 7; file++, count++)
+    for ( count += 1, file+= 1; file <= 7; file++, count++)
     {
         west |= 1ULL << count;
         //Break if attack ray meets piece on the board
@@ -572,7 +554,7 @@ U64 rook_attack(int square_index, U64 occupancy){
     file = square_index % 8;
 
     //calculating east ray
-    for ( count -= 1, file-= 1; file > 0; file--, count--)
+    for ( count -= 1, file-= 1; file >= 0; file--, count--)
     {
         west |= 1ULL << count;
         //Break if attack ray meets piece on the board
@@ -582,6 +564,29 @@ U64 rook_attack(int square_index, U64 occupancy){
 
     return north | west | east | south;
 }
+//Production of Magic Numbers ************************************************////////////////////////////////
+//A table of number of bits within a mask depending on the square
+int rook_bits[64] = {
+  12, 11, 11, 11, 11, 11, 11, 12,
+  11, 10, 10, 10, 10, 10, 10, 11,
+  11, 10, 10, 10, 10, 10, 10, 11,
+  11, 10, 10, 10, 10, 10, 10, 11,
+  11, 10, 10, 10, 10, 10, 10, 11,
+  11, 10, 10, 10, 10, 10, 10, 11,
+  11, 10, 10, 10, 10, 10, 10, 11,
+  12, 11, 11, 11, 11, 11, 11, 12
+};
+
+int bishop_bits[64] = {
+  6, 5, 5, 5, 5, 5, 5, 6,
+  5, 5, 5, 5, 5, 5, 5, 5,
+  5, 5, 7, 7, 7, 7, 5, 5,
+  5, 5, 7, 9, 9, 7, 5, 5,
+  5, 5, 7, 9, 9, 7, 5, 5,
+  5, 5, 7, 7, 7, 7, 5, 5,
+  5, 5, 5, 5, 5, 5, 5, 5,
+  6, 5, 5, 5, 5, 5, 5, 6
+};
 
 //A function to return all possible combinations of occupancy given a board position
 //attack_mask -> a variable that isolates all possible paths a sliding piece can go, except the edges and the position of the piece e.g b3
@@ -618,20 +623,76 @@ U64 set_occupancy(int index, U64 attack_mask, int bits_in_mask){
     return occupancy;
 }
 
+//A function that will perform the multiplication of magic number and occupancy to form index
+int multiply_magic(U64 occupancy, U64 magic, int bits){
+    return (int)((occupancy*magic) >> (64 - bits));
+}
+//A random 64bit number generator
+U64 xorshift64(U64 *state) {
+    U64 x = *state;
+    x ^= x << 13;
+    x ^= x >> 7;
+    x ^= x << 17;
+    *state = x;
+    return x;
+}
+U64 random_magic(U64 *state){
+    //Return an aligned random number, this discards unnecessary information in the random number
+    return xorshift64(state) &  0xFFFFFFFFFFFFFFF0ULL;
+}
+
+//piece - 0 if bishop, 1 if rook
+U64 find_magic(int square, int bits_in_mask, int piece){
+    U64 mask, b[ROOK_COMBINATIONS], a[ROOK_COMBINATIONS], used[ROOK_COMBINATIONS], magic;
+    int i, j, k, n, success;
+    U64 seed = 0x123456789ABCDEF0ULL; //A randomly chosen seed
+    mask = piece ? get_rook_mask(square) : get_bishop_mask(square);
+    for(int i =0; i < (1 << bits_in_mask); i++){
+        b[i] = set_occupancy(i, mask, n);
+        a[i] = piece ? rook_attacks[square][i]: bishop_attacks[square][i];
+    }
+    for(int k = 0; k < 1000000000; k++){
+        magic = random_magic(&seed);
+        if(bitCount((mask*magic) & 0xFF00000000000000ULL) < 6) continue;
+        for(int i = 0; i < ROOK_COMBINATIONS; i++){
+            used[i] = 0ULL;
+        }
+        for(int i = 0, success = 1; success && i < (1 << bits_in_mask);i++){
+            j = multiply_magic(b[i], magic, bits_in_mask);
+            if(used[j] == 0ULL){
+                used[j] = a[i];
+            }else if(used[j] != a[i]){
+                success = 0;
+            }
+        }
+        if(success){
+            return magic;
+        }
+    }
+    
+    printf("*****Failed*****\n");
+
+    return 0ULL;
+}
+
+
+
 void set_sliding_attacks(){
     for (size_t i = 0; i < BOARDS_SQUARES; i++)
     {
+        U64 rook_mask = get_rook_mask(i);
+        U64 bishop_mask = get_bishop_mask(i);
+        int bishop_max = (1 << bitCount(bishop_mask));
+        int rook_max = (1 << bitCount(rook_mask));
         // loop through all combinations of the rook
-        for(int j = 0; j < ROOK_COMBINATIONS; j++) {
-            U64  mask = get_rook_mask(i);
-            U64 rook_occupancy = set_occupancy(j, mask, bitCount(mask)); //calculate the j'th combination
+        for(int j = 0; j < rook_max; j++) {
+            U64 rook_occupancy = set_occupancy(j, rook_mask, bitCount(rook_mask)); //calculate the j'th combination
             rook_attacks[i][j] = rook_attack(i, rook_occupancy); //calculate the rook attack for the current occupancy combination 
         }
 
         //Loop through all combinations of the bishop combinations
         for(int k = 0; k < BISHOP_COMBINATIONS; k++){
-            U64 mask = get_bishop_mask(k);
-            U64 bishop_occupancy = set_occupancy(k, mask, bitCount(mask));
+            U64 bishop_occupancy = set_occupancy(k, bishop_mask, bitCount(bishop_mask));
             bishop_attacks[i][k] = bishop_attack(i, bishop_occupancy);
         }
     }

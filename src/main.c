@@ -13,37 +13,40 @@ int main(){
         {'P','P','P','P',' ','P','P','P'},
         {' ','N','B','Q','K',' ',' ',' '}
     };
+    int RBits[64] = {
+    12, 11, 11, 11, 11, 11, 11, 12,
+    11, 10, 10, 10, 10, 10, 10, 11,
+    11, 10, 10, 10, 10, 10, 10, 11,
+    11, 10, 10, 10, 10, 10, 10, 11,
+    11, 10, 10, 10, 10, 10, 10, 11,
+    11, 10, 10, 10, 10, 10, 10, 11,
+    11, 10, 10, 10, 10, 10, 10, 11,
+    12, 11, 11, 11, 11, 11, 11, 12
+    };
+
+    int BBits[64] = {
+    6, 5, 5, 5, 5, 5, 5, 6,
+    5, 5, 5, 5, 5, 5, 5, 5,
+    5, 5, 7, 7, 7, 7, 5, 5,
+    5, 5, 7, 9, 9, 7, 5, 5,
+    5, 5, 7, 9, 9, 7, 5, 5,
+    5, 5, 7, 7, 7, 7, 5, 5,
+    5, 5, 5, 5, 5, 5, 5, 5,
+    6, 5, 5, 5, 5, 5, 5, 6
+    };
     printf("\n White bitboards \n");
     init_rack(board);
-    /*print_matrix(get_K());
-    print_matrix(get_Q());
-    print_matrix(get_B());
-    print_matrix(get_N());
-    print_matrix(get_R());
-    print_matrix(get_P());
-    printf("\n Black bitboards \n");
-    print_matrix(get_k());
-    print_matrix(get_q());
-    print_matrix(get_b());
-    print_matrix(get_n());
-    print_matrix(get_r());
-    print_matrix(get_p());
-    printf("\n");
-    print_matrix(get_game());
-    printf("\n");
-    print_matrix(createEmptySquares());
-    printf("\n");
-    print_matrix(bDoublePushSources(get_p(), createEmptySquares()));
-    printf("\n");
-    print_matrix(bSinglePushSources(get_p(), createEmptySquares()));*/
-    //print_matrix(0x123456789ABCDEF0ULL);
-    //print_matrix(__builtin_bswap64(0x123456789ABCDEF0ULL));
-    //U64 rook_mask = get_rook_mask(7);
-    //print_matrix(rook_mask);
-    //printf("\n");
-    U64 bishop_mask = get_bishop_mask(28);
-    print_matrix(set_occupancy(511,bishop_mask,bitCount(bishop_mask)));
-    //printf("\n");
-    //print_matrix(rook_attack(16, get_game()));
+
+    int square;
+    printf("const uint64 RMagic[64] = {\n");
+    for(square = 0; square < 64; square++)
+        printf("  0x%llxULL,\n", find_magic(square, RBits[square], 1));
+    printf("};\n\n");
+
+    printf("const uint64 BMagic[64] = {\n");
+    for(square = 0; square < 64; square++)
+        printf("  0x%llxULL,\n", find_magic(square, BBits[square], 0));
+    printf("};\n\n");
+    
     return 0;
 }
