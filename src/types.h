@@ -2,6 +2,9 @@
 #define TYPES_H
 
 typedef unsigned long long U64;
+#define BOARDS_SQUARES  64
+#define ROOK_COMBINATIONS 4096
+#define BISHOP_COMBINATIONS 512
 //setting up the proper square data type for the chess board
 typedef enum {
     h1, g1, f1, e1, d1, c1, b1, a1,
@@ -13,4 +16,6 @@ typedef enum {
     h7, g7, f7, e7, d7, c7, b7, a7,
     h8, g8, f8, e8, d8, c8, b8, a8
 } Square;
+
+enum {bishop, rook};
 #endif

@@ -24,6 +24,9 @@ static int debruijn_BitScan(U64 bitboard){
     return debruijn_hash[((bitboard & -bitboard) * debruijn_number)>> 58];
 }
 int bitCount(U64 val); //change to inline and remove it from the header
+//A function that initialises all pre-calculated data
+void init();
+
 //The following are getters and setters of the pieces where uppercase is white and lowercase is black
 U64 get_K();
 U64 get_Q();
@@ -127,4 +130,8 @@ void set_sliding_attacks();
 
 //finding magics
 U64 find_magic(int square, int bits_in_mask, int piece);
+void init_magic_attacks(U64 rook_magics[], U64 bishop_magics[]);
+//Debugging
+void print_attacks(Square sq);
+U64 get_sliding_attack(Square sq, U64 occupancy, U64 magic, int rook);
 #endif
