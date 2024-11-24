@@ -26,9 +26,11 @@ U64 rook_magic_attacks[BOARDS_SQUARES][ROOK_COMBINATIONS];//Each square for a ro
 struct Magic_sq magic_bishop[64];
 struct Magic_sq magic_rook[64];
 
-//*********** */
-
-
+//*********** Most likely to be moved to generator.c */
+int castle;
+int side = -1;
+int enpessant = no_sq;
+//**************************************** */
 static U64 game = 0;//This variable is used to store the game state bitboard
 
 //The following are the masks of move generators
@@ -699,6 +701,35 @@ int char_pieces[] = {
     ['p'] = p
 };
 
+void fen_parser(const char* fen){
+    memset(bitboard_pieces, 0, sizeof(bitboard_pieces)); // Clear bitboards
+
+    const char* ptr = fen;
+    int rank = 7, file = 0;
+
+    // Parse piece placement
+    while (*ptr && *ptr != ' ') {
+        char c = *ptr++;
+        if (c == '/') { // Move to the next rank
+            rank--;
+            file = 0;
+        } else if (c >= '1' && c <= '8') { // Empty squares
+            file += c - '0';
+        } else { // Piece
+            int square = rank*8 + file;
+            printf(" %c ", c);
+            bitboard_pieces[char_pieces[c]] |= 1ULL << square;
+            file++;
+        }
+    }
+
+    // Skip past piece placement
+    while (*ptr && *ptr != ' ') {
+        printf(" %c ", *ptr);
+        ptr++;
+    }
+    // Additional fields (active color, castling rights, etc.) can be parsed similarly if needed
+}
 /*{'r','n','b','q','k','b','n','r'},
         {'p','p','p','p','p','p','p','p'},
         {' ',' ',' ',' ',' ',' ',' ',' '},

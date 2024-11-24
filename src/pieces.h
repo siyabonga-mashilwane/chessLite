@@ -144,5 +144,5 @@ extern char ascii_pieces[12];
 extern int char_pieces[];
 
 void print_pieces();
-
+void fen_parser(const char* fen);
 #endif

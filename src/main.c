@@ -24,5 +24,7 @@ int main(){
     //printf("\n %c\n", ascii_pieces[P]);
     print_chessboard();
     //print_pieces();
+    char *fen = "r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1";
+    fen_parser(fen);
     return 0;
 }
