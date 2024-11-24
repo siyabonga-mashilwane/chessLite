@@ -18,4 +18,11 @@ typedef enum {
 } Square;
 
 enum {bishop, rook};
+
+struct Magic_sq {
+   U64 mask;  // to mask relevant squares of both lines (no outer squares)
+   U64 magic; // magic 64-bit factor
+   int bits; // number of bits of the mask at that square
+};
+
 #endif

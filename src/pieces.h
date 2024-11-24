@@ -116,22 +116,23 @@ U64 kingMoveTargets(U64 king, U64 empty);
 void init_bishop_masks();
 U64 get_bishop_mask(int index);
 U64 bishop_attack(int index, U64 occupancy);
+U64 bishop_magic_attack(int square_index, U64 occupancy);
 
 
 //Rook utilities
 void init_rook_masks();
 U64 get_rook_mask();
 U64 rook_attack(int square_index, U64 occupancy);
+U64 rook_magic_attack(int square_index, U64 occupancy);
 
 
 //Sliding pieces utilities
 U64 set_occupancy(int index, U64 attack_mask, int bits_in_mask);
 void set_sliding_attacks();
-
-//finding magics
-U64 find_magic(int square, int bits_in_mask, int piece);
-void init_magic_attacks(U64 rook_magics[], U64 bishop_magics[]);
-//Debugging
-void print_attacks(Square sq);
+void init_bishop_attacks(U64 bishop_magics);
+void init_rook_attacks(U64 rook_magics);
 U64 get_sliding_attack(Square sq, U64 occupancy, U64 magic, int rook);
+
+void init_magic_attacks(U64 rook_magics[], U64 bishop_magics[]);
+
 #endif
