@@ -16,19 +16,7 @@ static U64 bishop_mask_generator(int index);
 static U64 rook_mask_generator(int index);
 
 //Capital letters as White and lowecase letters as black
-static U64 K = 0;
-static U64 Q = 0;
-static U64 B = 0;
-static U64 N = 0;
-static U64 R = 0;
-static U64 P = 0;
-
-static U64 k = 0;
-static U64 q = 0;
-static U64 b = 0; 
-static U64 n = 0;
-static U64 r = 0;
-static U64 p = 0;
+U64 bitboard_pieces[12]; //An array to hold all the bitboards of the game
 
 static U64 kingMoves[BOARDS_SQUARES];//A list of all possible moves a king can move given a position on the board
 static U64 bishopMasks[BOARDS_SQUARES]; //A list of all possible masks a bishop can have given a position on the board
@@ -60,41 +48,41 @@ void init(){
 }
 //Getters and setters for the game state and chess pieces
 U64 get_K(){
-    return K;
+    return bitboard_pieces[K];
 }
 U64 get_Q(){
-    return Q;
+    return bitboard_pieces[Q];
 }
 U64 get_B(){
-    return B;
+    return bitboard_pieces[B];
 }
 U64 get_N(){
-    return N;
+    return bitboard_pieces[N];
 }
 U64 get_R(){
-    return R;
+    return bitboard_pieces[R];
 }
 U64 get_P(){
-    return P;
+    return bitboard_pieces[P];
 }
 
 U64 get_k(){
-    return k;
+    return bitboard_pieces[k];
 }
 U64 get_q(){
-    return q;
+    return bitboard_pieces[q];
 }
 U64 get_b(){
-    return b;
+    return bitboard_pieces[b];
 }
 U64 get_n(){
-    return n;
+    return bitboard_pieces[n];
 }
 U64 get_r(){
-    return r;
+    return bitboard_pieces[r];
 }
 U64 get_p(){
-    return p;
+    return bitboard_pieces[p];
 }
 
 U64 get_game(){
@@ -103,52 +91,52 @@ U64 get_game(){
 
 //setters
 void set_K(U64 val){
-    K = val;
+    bitboard_pieces[K] = val;
     updateGame();
 }
 void set_Q(U64 val){
-    Q = val;
+    bitboard_pieces[Q] = val;
     updateGame();
 }
 void set_B(U64 val){
-    B = val;
+    bitboard_pieces[B] = val;
     updateGame();
 }
 void set_N(U64 val){
-    N = val;
+    bitboard_pieces[N] = val;
     updateGame();
 }
 void set_R(U64 val){
-    R = val;
+    bitboard_pieces[R] = val;
     updateGame();
 }
 void set_P(U64 val){
-    P = val;
+    bitboard_pieces[P] = val;
     updateGame();
 }
 
 void set_k(U64 val){
-    k = val;
+    bitboard_pieces[k] = val;
     updateGame();
 }
 void set_q(U64 val){
-    q = val;
+    bitboard_pieces[q] = val;
     updateGame();
 }
 void set_b(U64 val){
-    b = val;
+    bitboard_pieces[b] = val;
     updateGame();
 }
 void set_n(U64 val){
-    n = val;
+    bitboard_pieces[n] = val;
     updateGame();
 }
 void set_r(U64 val){
-    r = val;
+    bitboard_pieces[r] = val;
     updateGame();
 }
 void set_p(U64 val){
-    p = val;
+    bitboard_pieces[p] = val;
     updateGame();
 }
 
@@ -159,7 +147,10 @@ void set_game(U64 val){
 
 //A function that will Update the game bitboard
 void updateGame(){
-    game = K | Q | B | N | R | P | k | q | b | n | r | p;
+    for (size_t i = 0; i < 12; i++)
+    {
+        game |= bitboard_pieces[i];
+    }
 }
 //A function that will produce a bitboard of empty spaces on the bitboard.
 U64 createEmptySquares(){
@@ -201,9 +192,9 @@ void print_matrix(U64 word) {
 //A function that will trnsform the char array into chess bitboards
 void init_rack(char board[8][8])
 {
+    memset(bitboard_pieces, 0ULL, sizeof(bitboard_pieces));
     for (int i = 0; i < 8; i++)
     {
-        
         for (int j = 0; j < 8; j++)
         {
             U64 temp = 1;
@@ -212,40 +203,40 @@ void init_rack(char board[8][8])
             switch (board[i][j])
             {
             case 'K':
-                K = K ^ temp;
+                bitboard_pieces[K] ^= temp;
                 break;
             case 'Q':
-                Q = Q ^ temp;
+                bitboard_pieces[Q] ^= temp;
                 break;
             case 'B':
-                B = B ^ temp;
+                bitboard_pieces[B] ^= temp;
                 break;
             case 'N':
-                N = N ^ temp;
+                bitboard_pieces[N] ^= temp;
                 break;
             case 'R':
-                R = R ^ temp;
+                bitboard_pieces[R] ^= temp;
                 break;
             case 'P':
-                P = P ^ temp;
+                bitboard_pieces[P] ^= temp;
                 break;
             case 'k':
-                k = k ^ temp;
+                bitboard_pieces[k] ^= temp;
                 break;
             case 'q':
-                q = q ^ temp;
+                bitboard_pieces[q] ^= temp;
                 break;
             case 'b':
-                b = b ^ temp;
+                bitboard_pieces[b] ^= temp;
                 break;
             case 'n':
-                n = n ^ temp;
+                bitboard_pieces[n] ^= temp;
                 break;
             case 'r':
-                r = r ^ temp;
+                bitboard_pieces[r] ^= temp;
                 break;
             case 'p':
-                p = p ^ temp;
+                bitboard_pieces[p] ^= temp;
                 break;
             default:
                 break;
@@ -590,6 +581,12 @@ U64 rook_magic_attack(int square_index, U64 occupancy){
     return rook_magic_attacks[square_index][occupied];
 }
 
+
+//This is the function that returns queen attacks
+U64 queen_magic_attack(int square_index, U64 occupancy){
+    return rook_magic_attack(square_index, occupancy) | bishop_magic_attack(square_index, occupancy);
+}
+
 // Magic bitboard for sliding pieces
 void init_magic_attacks(U64 rook_magics[], U64 bishop_magics[]){
     //Initialising the attack tables for rook and bishop
@@ -632,14 +629,75 @@ void init_magic_attacks(U64 rook_magics[], U64 bishop_magics[]){
     
 }
 
-U64 get_sliding_attack(Square sq, U64 occupancy, U64 magic, int rook){
+/*U64 get_sliding_attack(Square sq, U64 occupancy, U64 magic, int rook){
     U64 temp = occupancy & (rook ? get_rook_mask(sq) : get_bishop_mask(sq));
     int index = multiply_magic(temp, magic, (rook ? rook_bits[sq] : bishop_bits[sq]));
     printf("\n attack index = %d\n", index);
     return (rook ? rook_magic_attacks[sq][index] : bishop_magic_attacks[sq][index]);
+}*/
+
+//Functions that need re-considering in terms of where they should actually be
+void print_chessboard(){
+    printf("\n");
+    for (int rank = 7; rank >= 0; rank--) {  // Iterate over ranks (rows)
+        printf(" %d  ", rank + 1);
+        for (int file = 7; file >= 0; file--) {  // Iterate over files (columns)
+            int square = rank * 8 + file;  // Calculate square index
+            U64 mask = 1ULL << square;     // Create mask for the square
+            int empty = 1;                  //A variable to keep track of empty squares, assume square is empty
+            for (int i = 0; i < 12; i++)
+            {
+                if (mask & get_bit(bitboard_pieces[i], square))
+                {
+                    printf(" %c ", ascii_pieces[i]);
+                    empty = 0;
+
+                }
+            }
+            if(empty){
+                printf(" . ");             // Mark empty square
+            }
+        }
+        printf("\n"); // Newline after each rank
+    }
+    printf("\n");
+    printf("     a  b  c  d  e  f  g  h  \n");
+    printf("    ------------------------");
+    printf("\n");
 }
 
+void print_pieces(){
+    for(int i = 0; i < 12; i++){
+        print_matrix(bitboard_pieces[i]);
+    }
+}
+const char* square_to_coordinates[64] = {
+    "h1" , "g1", "f1", "e1", "d1", "c1", "b1", "a1",
+    "h2" , "g2", "f2", "e2", "d2", "c2", "b2", "a2",
+    "h3" , "g3", "f3", "e3", "d3", "c3", "b3", "a3",
+    "h4" , "g4", "f4", "e4", "d4", "c4", "b4", "a4",
+    "h5" , "g5", "f5", "e5", "d5", "c5", "b5", "a5",
+    "h6" , "g6", "f6", "e6", "d6", "c6", "b6", "a6",
+    "h7" , "g7", "f7", "e7", "d7", "c7", "b7", "a7",
+    "h8" , "g8", "f8", "e8", "d8", "c8", "b8", "a8"
+};
+//char* unicode_pieces[12] = {L"♚", L"♛", L"♝", L"♞", L"♜", L"♟︎", L"♔", L"♕", L"♗", L"♘", L"♖"};
 
+char ascii_pieces[12] = "KQBNRPkqbnrp";
+int char_pieces[] = {
+    ['K'] = K,
+    ['Q'] = Q,
+    ['B'] = B,
+    ['N'] = N,
+    ['R'] = R,
+    ['P'] = P,
+    ['k'] = k,
+    ['q'] = q,
+    ['b'] = b,
+    ['n'] = n,
+    ['r'] = r,
+    ['p'] = p
+};
 
 /*{'r','n','b','q','k','b','n','r'},
         {'p','p','p','p','p','p','p','p'},

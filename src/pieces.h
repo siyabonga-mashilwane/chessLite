@@ -125,6 +125,8 @@ U64 get_rook_mask();
 U64 rook_attack(int square_index, U64 occupancy);
 U64 rook_magic_attack(int square_index, U64 occupancy);
 
+//Queen utilities
+U64 queen_magic_attack(int square_index, U64 occupancy);
 
 //Sliding pieces utilities
 U64 set_occupancy(int index, U64 attack_mask, int bits_in_mask);
@@ -134,5 +136,13 @@ void init_rook_attacks(U64 rook_magics);
 U64 get_sliding_attack(Square sq, U64 occupancy, U64 magic, int rook);
 
 void init_magic_attacks(U64 rook_magics[], U64 bishop_magics[]);
+
+//These functions are undeer review they need to be transported to the generator.h
+void print_chessboard();
+extern char* unicode_pieces[12];
+extern char ascii_pieces[12];
+extern int char_pieces[];
+
+void print_pieces();
 
 #endif

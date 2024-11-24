@@ -20,7 +20,9 @@ int main(){
     printf("\n White bitboards \n");
     init_rack(board);
     init();
-    print_matrix(bishop_magic_attack(h6, get_game()));
-    print_matrix(rook_magic_attack(b8, get_game()));
+    //printf("\n %d\n", char_pieces['P']);
+    //printf("\n %c\n", ascii_pieces[P]);
+    print_chessboard();
+    //print_pieces();
     return 0;
 }
