@@ -27,9 +27,11 @@ struct Magic_sq magic_bishop[64];
 struct Magic_sq magic_rook[64];
 
 //*********** Most likely to be moved to generator.c */
-int castle;
+int castle = 0;
 int side = -1;
 int enpessant = no_sq;
+int half_moves = 0;
+int full_moves = 0;
 //**************************************** */
 static U64 game = 0;//This variable is used to store the game state bitboard
 
@@ -179,6 +181,7 @@ void print_binary(U64 n) {
 }
 //A function that will print the U64 into a binary matrix/chess board
 void print_matrix(U64 word) {
+    printf("\n");
     for (int row = 7; row >= 0; row--) {
         for (int col = 7; col >= 0; col--) {
             // Extract the bit at position (row * 8 + col)
@@ -683,6 +686,17 @@ const char* square_to_coordinates[64] = {
     "h7" , "g7", "f7", "e7", "d7", "c7", "b7", "a7",
     "h8" , "g8", "f8", "e8", "d8", "c8", "b8", "a8"
 };
+
+/*const int coordinates[64] = {
+    ["h1"] = h1 , ["g1"] = g1, ["f1"] = f1, ["e1"] = e1, ["d1"] = d1, ["c1"] = c1, ["b1"] b1, ["a1"] = a1,
+    ["h2"] = h2 , ["g2"] = g2, ["f2"] = f2, ["e2"] = e2, ["d2"] = d2, ["c2"] = c2, ["b2"] b2, ["a2"] = a2,
+    ["h3"] = h3 , ["g3"] = g3, ["f3"] = f3, ["e3"] = e3, ["d3"] = d3, ["c3"] = c3, ["b3"] b3, ["a3"] = a3,
+    ["h4"] = h4 , ["g4"] = g4, ["f4"] = f4, ["e4"] = e4, ["d4"] = d4, ["c4"] = c4, ["b4"] b4, ["a4"] = a4,
+    ["h5"] = h5 , ["g5"] = g5, ["f5"] = f5, ["e5"] = e5, ["d5"] = d5, ["c5"] = c5, ["b5"] b5, ["a5"] = a5,
+    ["h6"] = h6 , ["g6"] = g6, ["f6"] = f6, ["e6"] = e6, ["d6"] = d6, ["c6"] = c6, ["b6"] b6, ["a6"] = a6,
+    ["h7"] = h7 , ["g7"] = g7, ["f7"] = f7, ["e7"] = e7, ["d7"] = d7, ["c7"] = c7, ["b7"] b7, ["a7"] = a7,
+    ["h8"] = h8 , ["g8"] = g8, ["f8"] = f8, ["e8"] = e8, ["d8"] = d8, ["c8"] = c8, ["b8"] b8, ["a8"] = a8
+};*/
 //char* unicode_pieces[12] = {L"♚", L"♛", L"♝", L"♞", L"♜", L"♟︎", L"♔", L"♕", L"♗", L"♘", L"♖"};
 
 char ascii_pieces[12] = "KQBNRPkqbnrp";
@@ -701,6 +715,7 @@ int char_pieces[] = {
     ['p'] = p
 };
 
+//An extensive FEN parser function
 void fen_parser(const char* fen){
     memset(bitboard_pieces, 0, sizeof(bitboard_pieces)); // Clear bitboards
 
@@ -709,32 +724,135 @@ void fen_parser(const char* fen){
 
     // Parse piece placement
     while (*ptr && *ptr != ' ') {
-        char c = *ptr++;
+        char c = *ptr;
         if (c == '/') { // Move to the next rank
             rank--;
             file = 0;
         } else if (c >= '1' && c <= '8') { // Empty squares
-            file += c - '0';
+            file += (c - '0');
+            //printf("%d \n", file);
         } else { // Piece
-            int square = rank*8 + file;
-            printf(" %c ", c);
+            int square = rank*8 + (7-file);
+            printf(" %c, rank: %d , file: %d , square: %d \n", c, rank, file, square);
             bitboard_pieces[char_pieces[c]] |= 1ULL << square;
             file++;
         }
+        ptr++;
     }
+    
 
     // Skip past piece placement
-    while (*ptr && *ptr != ' ') {
+    while (*ptr && *ptr == ' ') {
         printf(" %c ", *ptr);
         ptr++;
     }
-    // Additional fields (active color, castling rights, etc.) can be parsed similarly if needed
+
+    //Evaluate who's turn it is to play
+    if(*ptr && *ptr != ' '){
+        if(*ptr == 'b'){
+            side = black;
+        }else if (*ptr == 'w')
+        {
+            side = white;
+        }
+        ptr++;
+    }
+
+    // Skip past side to move
+    while (*ptr && *ptr == ' ') {
+        printf(" %c ", *ptr);
+        ptr++;
+    }
+    //Evaluate castling rights
+
+    //A documentation of the castle variable enum is extensively explained in the types.h file
+    while (*ptr && *ptr != ' ') {
+        switch (*ptr)
+        {
+        case 'K':
+            castle |= wk;
+            break;
+        case 'Q':
+            castle |= wq;
+            break;
+        case 'k':
+            castle |= bk;
+            break;
+        case 'q':
+            castle |= bq;
+            break;
+        default:
+            castle = 0;
+            break;
+        }
+        ptr++;
+    }
+
+    //Skip past the castling and move to the enpessant
+    while (*ptr && *ptr == ' ') {
+        printf(" %c ", *ptr);
+        ptr++;
+    }
+
+    char c1[3] = "";
+    while(*ptr && *ptr != ' '){
+        if (*ptr != '-')
+        {
+            enpessant = no_sq;
+        }else{
+            char temp[2] = {*ptr, '\0'};
+            strcat(c1,temp); //concatenate the previous string and the current string
+        }
+        ptr++;
+    }
+    enpessant = (int)(c1[0] - 'a') + (int)(c1[1] - '1')*8;
+
+    //Skip past the enpessant
+    while (*ptr && *ptr == ' ') {
+        printf(" %c ", *ptr);
+        ptr++;
+    }
+
+    //Evaluate the halfmoves
+    half_moves = 0;
+    while (*ptr && *ptr != ' ') {
+        char c = *ptr;
+        if (c >= '0' && c <= '9') {
+            half_moves = half_moves * 10 + (c - '1'); //normalise the ascii int to be in between 0 and 9;
+        }
+        ptr++;
+    }
+
+    //Skip past the half moves
+    while (*ptr && *ptr == ' ') {
+        printf(" %c ", *ptr);
+        ptr++;
+    }
+
+    //evaluate full moves
+    full_moves = 0;
+    while (*ptr && *ptr != ' ') {
+        char c = *ptr;
+        if (c >= '0' && c <= '9') {
+            full_moves = full_moves * 10 + (c - '1');
+        }
+        ptr++;
+    }
+    printf("side:  %d\n", side);
+    printf("Castling rights:  %d\n", castle);
+    printf("Enpessant:  %d\n", enpessant);
+    
+
 }
-/*{'r','n','b','q','k','b','n','r'},
-        {'p','p','p','p','p','p','p','p'},
-        {' ',' ',' ',' ',' ',' ',' ',' '},
-        {' ',' ',' ',' ',' ',' ',' ',' '},
-        {' ',' ',' ',' ',' ',' ',' ',' '},
-        {' ',' ',' ',' ',' ',' ',' ',' '},
-        {'P','P','P','P','P','P','P','P'},
-        {'R','N','B','Q','K','B','N','R'}*/
+
+
+/*  
+    {'r','n','b','q','k','b','n','r'},
+    {'p','p','p','p','p','p','p','p'},
+    {' ',' ',' ',' ',' ',' ',' ',' '},
+    {' ',' ',' ',' ',' ',' ',' ',' '},
+    {' ',' ',' ',' ',' ',' ',' ',' '},
+    {' ',' ',' ',' ',' ',' ',' ',' '},
+    {'P','P','P','P','P','P','P','P'},
+    {'R','N','B','Q','K','B','N','R'}
+*/
