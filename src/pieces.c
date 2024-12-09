@@ -733,7 +733,7 @@ void fen_parser(const char* fen){
             //printf("%d \n", file);
         } else { // Piece
             int square = rank*8 + (7-file);
-            printf(" %c, rank: %d , file: %d , square: %d \n", c, rank, file, square);
+            //printf(" %c, rank: %d , file: %d , square: %d \n", c, rank, file, square);
             bitboard_pieces[char_pieces[c]] |= 1ULL << square;
             file++;
         }
@@ -805,6 +805,7 @@ void fen_parser(const char* fen){
         }
         ptr++;
     }
+    printf("enpessant as a string: %s\n", c1);
     enpessant = (int)(c1[0] - 'a') + (int)(c1[1] - '1')*8;
 
     //Skip past the enpessant
@@ -818,7 +819,7 @@ void fen_parser(const char* fen){
     while (*ptr && *ptr != ' ') {
         char c = *ptr;
         if (c >= '0' && c <= '9') {
-            half_moves = half_moves * 10 + (c - '1'); //normalise the ascii int to be in between 0 and 9;
+            half_moves = half_moves * 10 + (c - '0'); //normalise the ascii int to be in between 0 and 9;
         }
         ptr++;
     }
@@ -834,13 +835,15 @@ void fen_parser(const char* fen){
     while (*ptr && *ptr != ' ') {
         char c = *ptr;
         if (c >= '0' && c <= '9') {
-            full_moves = full_moves * 10 + (c - '1');
+            full_moves = full_moves * 10 + (c - '0');
         }
         ptr++;
     }
-    printf("side:  %d\n", side);
+    printf("\n side:  %d\n", side);
     printf("Castling rights:  %d\n", castle);
     printf("Enpessant:  %d\n", enpessant);
+    printf("Half Moves:  %d\n", half_moves);
+    printf("Full Moves:  %d\n", full_moves);
     
 
 }
