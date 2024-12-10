@@ -27,6 +27,8 @@ typedef enum {bishop, rook} SL_Piece;
 //Which colour/side to move
 typedef enum { white, black} Colour;
 
+typedef enum {false, true} bool;
+
 struct Magic_sq {
    U64 mask;  // to mask relevant squares of both lines (no outer squares)
    U64 magic; // magic 64-bit factor

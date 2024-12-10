@@ -100,13 +100,18 @@ U64 wDoublePush(U64 wPawns, U64 emptySquares);
 U64 bSinglePush(U64 bPawns, U64 emptySquares);
 U64 bDoublePush(U64 bPawns, U64 emptySquares);
 
+U64 get_pawn_attack(Colour side, int square); // Returns a pawn attack given a square for the pawn to move
+void init_pawn_attacks(); // a function to initialise all the pawn attacks array
 U64 wSinglePushSources(U64 wPawns, U64 emptySquares); //Returns all sources of white pawn squares you can single push
 U64 wDoublePushSources(U64 wPawns, U64 emptySquares); //Returns all sources of white pawn squares you can double push
 U64 bSinglePushSources(U64 bPawns, U64 emptySquares); //Returns all sources of Black pawn squares you can single push
 U64 bDoublePushSources(U64 bPawns, U64 emptySquares); //Returns all sources of Black pawn squares you can double push
 
+
 //Knight moving generators
 U64 knightMoveTargets(U64 knights);
+U64 get_knight_attack(int square);
+void init_knight_attacks();
 
 //King moving generators
 void init_king_targets();
@@ -145,4 +150,7 @@ extern int char_pieces[];
 
 void print_pieces();
 void fen_parser(const char* fen);
+
+//A function that has to return a boolean value as to whether that square is attacked by the other side/player
+bool is_square_attacked(int square, Colour side, U64 occupancy);
 #endif

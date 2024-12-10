@@ -18,7 +18,16 @@ static U64 rook_mask_generator(int index);
 //Capital letters as White and lowecase letters as black
 U64 bitboard_pieces[12]; //An array to hold all the bitboards of the game
 
-static U64 kingMoves[BOARDS_SQUARES];//A list of all possible moves a king can move given a position on the board
+//Pawn attack arrays
+U64 pawn_attacks[2][BOARDS_SQUARES];
+
+//Knight attacks
+U64 knight_attacks[BOARDS_SQUARES];
+
+//King attack array
+static U64 king_attacks[BOARDS_SQUARES];//A list of all possible moves a king can move given a position on the board
+
+//***** Sliding Pieces *****/
 static U64 bishopMasks[BOARDS_SQUARES]; //A list of all possible masks a bishop can have given a position on the board
 static U64 rookMasks[BOARDS_SQUARES]; //A list of all possible rook masks a rook can have given a position on the booard
 U64 bishop_magic_attacks[BOARDS_SQUARES][BISHOP_COMBINATIONS]; //Each square for a bishop has a maximum of 512 occupancy combination combinations  (2^9) to consider hence the 512 
@@ -49,6 +58,8 @@ void init(){
     init_rook_masks();
     init_bishop_masks();
     init_magic_attacks(rook_magic_numbers, bishop_magic_numbers);
+    init_pawn_attacks();
+    init_knight_attacks();
 }
 //Getters and setters for the game state and chess pieces
 U64 get_K(){
@@ -302,6 +313,28 @@ U64 bDoublePush(U64 bPawns, U64 emptySquares){
     U64 pushOne = bSinglePush(bPawns,emptySquares);
     return southOne(pushOne) & emptySquares & row5;
 }
+void init_pawn_attacks(){
+    //setting up Whites attack table
+    for (size_t i = 0; i < BOARDS_SQUARES; i++)
+    {
+        U64 board = 1 << i; // initialise the boatd to contain a pawn at that square
+        pawn_attacks[white][i] = (northWestOne(board) | northEastOne(board));     
+    }
+    
+    //setting up Black's attack table
+    for (size_t i = 0; i < BOARDS_SQUARES; i++)
+    {
+        U64 board = 1 << i; // initialise the boatd to contain a pawn at that square
+        pawn_attacks[black][i] = (southWestOne(board) | southEastOne(board));     
+    }
+}
+//A function that is used to return the attack bitboard of a pawn on a particular square.
+U64 get_pawn_attack(Colour side, int square){
+    return pawn_attacks[side][square];
+}
+
+
+
 
 //Analogy, if moving the white pawns up against the empty squares gives destination squares then moving 
 //the empty squares against the white pawn will return the source positions so:
@@ -325,6 +358,8 @@ U64 bDoublePushSources(U64 bPawns, U64 emptySquares){
     return bSinglePushSources(bPawns, emptyRow6);
 }
 
+
+
 //Knight moving generators
     
 //Returns all the possible moves for all the knights on a particular bitboard
@@ -341,34 +376,48 @@ U64 knightMoveTargets(U64 knights){
     return (noNoEast | noNoWest | soSoEast | soSoWest | weWENorth | weWeSouth | eaEaNorth | eaEaSouth);
 }
 
+//Used to initialise the knight attack table
+void init_knight_attacks(){
+    for (size_t i = 0; i < BOARDS_SQUARES; i++)
+    {
+        U64 knight = 1 << i;
+        knight_attacks[i] = knightMoveTargets(knight);
+    }
+}
+
+//A function that returns the possible moves of a knight given a particular square
+U64 get_knight_attack(int square){
+    return knight_attacks[square];
+}
+
 //King move generators
 
 //Helper function for calculating all the direction moves of a king
 static U64 kingMoveTargetsHelper(U64 king){
-    U64 noWest = northWestOne(king);
-    U64 soWest = southWestOne(king);
-    U64 soEast = southEastOne(king);
-    U64 noEast = northEastOne(king);
+    U64 noWest = northWestOne(king & notHFile);
+    U64 soWest = southWestOne(king & notHFile);
+    U64 soEast = southEastOne(king & notAFile);
+    U64 noEast = northEastOne(king & notAFile);
     U64 north = northOne(king);
     U64 south = southOne(king);
-    U64 west = westOne(king);
-    U64 east = eastOne(king);
+    U64 west = westOne(king & notHFile);
+    U64 east = eastOne(king & notAFile);
 
     return (noWest | soWest | soEast | noEast | north | south | west | east);
 }
-//Ran at the start of the game to initialize the kingmoves array which holds all possible moves of a king in a board.
+//Ran at the start of the game to initialize the king_attacks array which holds all possible moves of a king in a board.
 void init_king_targets(){
     U64 king = 1;
     for (size_t i = 0; i < BOARDS_SQUARES; i++, king = king<<1)
     {
-        kingMoves[i] = kingMoveTargetsHelper(king);
+        king_attacks[i] = kingMoveTargetsHelper(king);
     }
 }
 
 //A function that returns the possible moves of a king in a given game state/position.
 U64 get_king_target(U64 king, U64 empty){
     int index = (int)log2(king);
-    return kingMoves[index] & empty;
+    return king_attacks[index] & empty;
 }
 
 //Bishop utilities
@@ -730,10 +779,9 @@ void fen_parser(const char* fen){
             file = 0;
         } else if (c >= '1' && c <= '8') { // Empty squares
             file += (c - '0');
-            //printf("%d \n", file);
         } else { // Piece
             int square = rank*8 + (7-file);
-            //printf(" %c, rank: %d , file: %d , square: %d \n", c, rank, file, square);
+            //printf(" %c, rank: %d , file: %d , square: %d \n", c, rank, file, square);  line used for debugging
             bitboard_pieces[char_pieces[c]] |= 1ULL << square;
             file++;
         }
@@ -743,7 +791,6 @@ void fen_parser(const char* fen){
 
     // Skip past piece placement
     while (*ptr && *ptr == ' ') {
-        printf(" %c ", *ptr);
         ptr++;
     }
 
@@ -760,7 +807,6 @@ void fen_parser(const char* fen){
 
     // Skip past side to move
     while (*ptr && *ptr == ' ') {
-        printf(" %c ", *ptr);
         ptr++;
     }
     //Evaluate castling rights
@@ -790,27 +836,31 @@ void fen_parser(const char* fen){
 
     //Skip past the castling and move to the enpessant
     while (*ptr && *ptr == ' ') {
-        printf(" %c ", *ptr);
         ptr++;
     }
 
     char c1[3] = "";
+    int c1_index = 0;
     while(*ptr && *ptr != ' '){
-        if (*ptr != '-')
+        if (*ptr == '-')
         {
             enpessant = no_sq;
+        }else if (c1_index < 2) { // Ensure c1 doesn't overflow
+            c1[c1_index++] = *ptr; // Append the character
         }else{
-            char temp[2] = {*ptr, '\0'};
-            strcat(c1,temp); //concatenate the previous string and the current string
+            // Handle buffer overflow (optional)
+            fprintf(stderr, "Buffer overflow detected in c1!\n");
+            break;
         }
         ptr++;
     }
-    printf("enpessant as a string: %s\n", c1);
-    enpessant = (int)(c1[0] - 'a') + (int)(c1[1] - '1')*8;
+    c1[c1_index] = '\0'; // Null-terminate the string
+    
+    //Simply break down the square from string coordinate into an interger coordinate by normalising the characters into a range we can exploit 
+    enpessant = ((int)(c1[0] - 'a') + (int)(c1[1] - '0')*8) - 1;
 
     //Skip past the enpessant
     while (*ptr && *ptr == ' ') {
-        printf(" %c ", *ptr);
         ptr++;
     }
 
@@ -819,6 +869,7 @@ void fen_parser(const char* fen){
     while (*ptr && *ptr != ' ') {
         char c = *ptr;
         if (c >= '0' && c <= '9') {
+            //(c - '0') we use this to normalise the characters into a 0 - 9 range so we can append 
             half_moves = half_moves * 10 + (c - '0'); //normalise the ascii int to be in between 0 and 9;
         }
         ptr++;
@@ -826,7 +877,6 @@ void fen_parser(const char* fen){
 
     //Skip past the half moves
     while (*ptr && *ptr == ' ') {
-        printf(" %c ", *ptr);
         ptr++;
     }
 
@@ -835,19 +885,36 @@ void fen_parser(const char* fen){
     while (*ptr && *ptr != ' ') {
         char c = *ptr;
         if (c >= '0' && c <= '9') {
+            //(c - '0') we use this to normalise the characters into a 0 - 9 range so we can append 
             full_moves = full_moves * 10 + (c - '0');
         }
         ptr++;
     }
-    printf("\n side:  %d\n", side);
-    printf("Castling rights:  %d\n", castle);
-    printf("Enpessant:  %d\n", enpessant);
-    printf("Half Moves:  %d\n", half_moves);
-    printf("Full Moves:  %d\n", full_moves);
     
-
+    
 }
+bool is_square_attacked(int square, Colour side, U64 occupancy){
+    //Attacked by pawns 
+    U64 pawns = (side == white)? bitboard_pieces[P] : bitboard_pieces[p];
+    if(get_pawn_attack((black ^ 1), square) & pawns) return true;
+    // Attacked by knights 
+    U64 knights = (side == white)? bitboard_pieces[N] : bitboard_pieces[n];
+    if(get_knight_attack(square) & knights) return true;
 
+    //Attacked by kings
+    U64 king = (side == white)? bitboard_pieces[K] : bitboard_pieces[k];
+    if(king_attacks[square] & king) return true;
+
+    //Attacked by bishops
+    U64 bishopQueens = (side == white)? (bitboard_pieces[Q] | bitboard_pieces[B]): (bitboard_pieces[q] | bitboard_pieces[b]);
+    if(bishop_magic_attack(square, occupancy) & bishopQueens) return true;
+
+    //Attacked by rooks
+    U64 rookQueens = (side == white)? (bitboard_pieces[Q] | bitboard_pieces[R]): (bitboard_pieces[q] | bitboard_pieces[r]);
+    if(rook_magic_attack(square, occupancy) & rookQueens) return true;
+
+    return false;
+}
 
 /*  
     {'r','n','b','q','k','b','n','r'},
