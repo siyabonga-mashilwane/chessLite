@@ -27,7 +27,8 @@ int main(){
     char *fen = "8/5k2/3p4/1p1Pp2p/pP2Pp1P/P4P1K/8/8 b - a1 99 50";
     fen_parser(fen);
     print_chessboard();
-    //print_matrix(get_P());
+    printf("\n%d ", is_square_attacked(c6, white, get_game()));
+    //get_pawn_attack(black, 45);
     
     return 0;
 }

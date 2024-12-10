@@ -162,6 +162,8 @@ void set_game(U64 val){
 
 //A function that will Update the game bitboard
 void updateGame(){
+    printf("Game Update being ran\n");
+    game = 0;
     for (size_t i = 0; i < 12; i++)
     {
         game |= bitboard_pieces[i];
@@ -315,21 +317,24 @@ U64 bDoublePush(U64 bPawns, U64 emptySquares){
 }
 void init_pawn_attacks(){
     //setting up Whites attack table
-    for (size_t i = 0; i < BOARDS_SQUARES; i++)
+    for (int i = 0; i < BOARDS_SQUARES; i++)
     {
-        U64 board = 1 << i; // initialise the boatd to contain a pawn at that square
+        U64 board = (1ULL << i); // initialise the boatd to contain a pawn at that square
         pawn_attacks[white][i] = (northWestOne(board) | northEastOne(board));     
     }
     
     //setting up Black's attack table
-    for (size_t i = 0; i < BOARDS_SQUARES; i++)
+    for (int i = 0; i < BOARDS_SQUARES; i++)
     {
-        U64 board = 1 << i; // initialise the boatd to contain a pawn at that square
+        U64 board = (1ULL << i); // initialise the boatd to contain a pawn at that square
         pawn_attacks[black][i] = (southWestOne(board) | southEastOne(board));     
     }
 }
 //A function that is used to return the attack bitboard of a pawn on a particular square.
 U64 get_pawn_attack(Colour side, int square){
+    printf("\n The square for the PAWN is: %d \n", square);
+    printf("\n The side for the PAWN is: %d \n", side);
+    print_matrix(pawn_attacks[side][square]);
     return pawn_attacks[side][square];
 }
 
@@ -380,7 +385,7 @@ U64 knightMoveTargets(U64 knights){
 void init_knight_attacks(){
     for (size_t i = 0; i < BOARDS_SQUARES; i++)
     {
-        U64 knight = 1 << i;
+        U64 knight = 1ULL << i;
         knight_attacks[i] = knightMoveTargets(knight);
     }
 }
@@ -407,7 +412,7 @@ static U64 kingMoveTargetsHelper(U64 king){
 }
 //Ran at the start of the game to initialize the king_attacks array which holds all possible moves of a king in a board.
 void init_king_targets(){
-    U64 king = 1;
+    U64 king = 1ULL;
     for (size_t i = 0; i < BOARDS_SQUARES; i++, king = king<<1)
     {
         king_attacks[i] = kingMoveTargetsHelper(king);
@@ -528,7 +533,6 @@ U64 bishop_magic_attack(int square_index, U64 occupancy){
     occupied &= magic_bishop[square_index].mask;
     occupied *= magic_bishop[square_index].magic;
     occupied >>= (int)(64 - (magic_bishop[square_index].bits));
-    printf("\n Index is : %d\n", occupied);
     return bishop_magic_attacks[square_index][occupied];
 }
 
@@ -890,27 +894,31 @@ void fen_parser(const char* fen){
         }
         ptr++;
     }
-    
-    
+    updateGame();
 }
 bool is_square_attacked(int square, Colour side, U64 occupancy){
     //Attacked by pawns 
     U64 pawns = (side == white)? bitboard_pieces[P] : bitboard_pieces[p];
-    if(get_pawn_attack((black ^ 1), square) & pawns) return true;
+    printf("Attacked pawn ");
+    if(get_pawn_attack((side ^ 1), square) & pawns) return true;
     // Attacked by knights 
     U64 knights = (side == white)? bitboard_pieces[N] : bitboard_pieces[n];
+    printf("Attacked knight ");
     if(get_knight_attack(square) & knights) return true;
 
     //Attacked by kings
     U64 king = (side == white)? bitboard_pieces[K] : bitboard_pieces[k];
+    printf("Attacked king ");
     if(king_attacks[square] & king) return true;
 
     //Attacked by bishops
     U64 bishopQueens = (side == white)? (bitboard_pieces[Q] | bitboard_pieces[B]): (bitboard_pieces[q] | bitboard_pieces[b]);
+    printf("Attacked bishop ");
     if(bishop_magic_attack(square, occupancy) & bishopQueens) return true;
 
     //Attacked by rooks
     U64 rookQueens = (side == white)? (bitboard_pieces[Q] | bitboard_pieces[R]): (bitboard_pieces[q] | bitboard_pieces[r]);
+    printf("Attacked rook ");
     if(rook_magic_attack(square, occupancy) & rookQueens) return true;
 
     return false;
