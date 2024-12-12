@@ -4,6 +4,10 @@
 #include "types.h"
 #include "magics.h"
 #include <string.h>
+#include <wchar.h>
+#include <locale.h>
+#include <windows.h>
+
 
 #define get_bit(bitboard, square) ((bitboard) & (1ULL << square))
 #define pop_bit(bitboard, square) (get_bit((bitboard), square) ? ((bitboard) ^= (1ULL << square)) : 0)
@@ -696,6 +700,7 @@ void init_magic_attacks(U64 rook_magics[], U64 bishop_magics[]){
 
 //Functions that need re-considering in terms of where they should actually be
 void print_chessboard(){
+    HANDLE cons = GetStdHandle(STD_OUTPUT_HANDLE);
     printf("\n");
     for (int rank = 7; rank >= 0; rank--) {  // Iterate over ranks (rows)
         printf(" %d  ", rank + 1);
@@ -707,9 +712,13 @@ void print_chessboard(){
             {
                 if (mask & get_bit(bitboard_pieces[i], square))
                 {
-                    printf(" %c ", ascii_pieces[i]);
+                    DWORD n;
+                    //wchar_t p[] = L"Queen: \u265B.\n";
+                    //WriteConsoleW(cons, p, wcslen(p), &n, NULL );
+                    WriteConsoleW(cons, unicode_pieces[i], wcslen(unicode_pieces[i]), &n, NULL);
+                    //printf(" %c ", ascii_pieces[i]);
+                    //wprintf(L" %lc ", unicode_pieces[i]);
                     empty = 0;
-
                 }
             }
             if(empty){
@@ -722,6 +731,7 @@ void print_chessboard(){
     printf("     a  b  c  d  e  f  g  h  \n");
     printf("    ------------------------");
     printf("\n");
+
 }
 
 void print_pieces(){
@@ -750,7 +760,23 @@ const char* square_to_coordinates[64] = {
     ["h7"] = h7 , ["g7"] = g7, ["f7"] = f7, ["e7"] = e7, ["d7"] = d7, ["c7"] = c7, ["b7"] b7, ["a7"] = a7,
     ["h8"] = h8 , ["g8"] = g8, ["f8"] = f8, ["e8"] = e8, ["d8"] = d8, ["c8"] = c8, ["b8"] b8, ["a8"] = a8
 };*/
-//char* unicode_pieces[12] = {L"♚", L"♛", L"♝", L"♞", L"♜", L"♟︎", L"♔", L"♕", L"♗", L"♘", L"♖"};
+
+//Note: the colours of the pieces have been switched because of the black backround of the console they dont appear properly hence the colours had to be switched
+wchar_t* unicode_pieces[12] = {L" ♚ ", L" ♛ ", L" ♝ ", L" ♞ ", L" ♜ ", L" ♟︎ ", L" ♔ ", L" ♕ ", L" ♗ ", L" ♘ ", L" ♖ ", L" ♙ "};
+/*wchar_t* unicode_pieces[12] = {
+    L" \u2654 ", //White King
+    L" \u2655 ", //White queen
+    L" \u2657 ", //White bishop
+    L" \u2658 ", //White knight
+    L" \u2656 ", //White rook
+    L" \u2659 ", //White pawn
+    L" \u265A ", //Black King
+    L" \u265B ", //Black King
+    L" \u265D ", //Black King
+    L" \u265A ", //Black King
+    L" \u265C ", //Black rook
+    L" \u265F " //Black pawn
+};*/
 
 char ascii_pieces[12] = "KQBNRPkqbnrp";
 int char_pieces[] = {
@@ -771,7 +797,9 @@ int char_pieces[] = {
 //An extensive FEN parser function
 void fen_parser(const char* fen){
     memset(bitboard_pieces, 0, sizeof(bitboard_pieces)); // Clear bitboards
-
+    enpessant = 0;
+    half_moves = 0;
+    full_moves = 0;
     const char* ptr = fen;
     int rank = 7, file = 0;
 
@@ -896,6 +924,10 @@ void fen_parser(const char* fen){
     }
     updateGame();
 }
+
+/*******************\
+ * Move Generation *
+\*******************/ 
 bool is_square_attacked(int square, Colour side, U64 occupancy){
     //Attacked by pawns 
     U64 pawns = (side == white)? bitboard_pieces[P] : bitboard_pieces[p];
@@ -923,6 +955,9 @@ bool is_square_attacked(int square, Colour side, U64 occupancy){
 
     return false;
 }
+
+
+
 
 /*  
     {'r','n','b','q','k','b','n','r'},

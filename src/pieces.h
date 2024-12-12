@@ -1,6 +1,9 @@
 #ifndef PIECES_H
 #define PIECES_H
 #include "./types.h"
+#include <wchar.h>
+
+
 
 // The following functionsmight need to be moved into the library file in the future
 
@@ -144,7 +147,7 @@ void init_magic_attacks(U64 rook_magics[], U64 bishop_magics[]);
 
 //These functions are undeer review they need to be transported to the generator.h
 void print_chessboard();
-extern char* unicode_pieces[12];
+extern wchar_t* unicode_pieces[12];
 extern char ascii_pieces[12];
 extern int char_pieces[];
 

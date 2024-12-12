@@ -3,6 +3,8 @@
 #include "./types.h"
 #include "magics.h"
 #include <omp.h>
+#include <locale.h>
+
 
 int main(){
     //omp_set_num_threads(10);
@@ -16,7 +18,8 @@ int main(){
         {'P','P','P','P',' ','P','P','P'},
         {' ','N','B','Q','K',' ',' ',' '}
     };
-    
+    setlocale(LC_ALL, "en_US.UTF-16");
+
     printf("\n White bitboards \n");
     init_rack(board);
     init();
@@ -27,7 +30,7 @@ int main(){
     char *fen = "8/5k2/3p4/1p1Pp2p/pP2Pp1P/P4P1K/8/8 b - a1 99 50";
     fen_parser(fen);
     print_chessboard();
-    printf("\n%d ", is_square_attacked(c6, white, get_game()));
+    //printf("\n%d ", is_square_attacked(c6, white, get_game()));
     //get_pawn_attack(black, 45);
     
     return 0;
