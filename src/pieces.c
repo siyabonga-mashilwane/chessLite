@@ -4,6 +4,7 @@
 #include "types.h"
 #include "magics.h"
 #include <string.h>
+#include <stdint.h>
 #include <wchar.h>
 #include <locale.h>
 #include <windows.h>
@@ -39,6 +40,10 @@ U64 rook_magic_attacks[BOARDS_SQUARES][ROOK_COMBINATIONS];//Each square for a ro
 struct Magic_sq magic_bishop[64];
 struct Magic_sq magic_rook[64];
 
+//***** Arrays for Rectangular look-up, holds all instances of whether there is an attacked square in between 2 squares *****/
+U64 arr_rectangular[BOARDS_SQUARES][BOARDS_SQUARES];
+U64 line_rectangular[BOARDS_SQUARES][BOARDS_SQUARES];
+
 //*********** Most likely to be moved to generator.c */
 int castle = 0;
 int side = -1;
@@ -64,6 +69,7 @@ void init(){
     init_magic_attacks(rook_magic_numbers, bishop_magic_numbers);
     init_pawn_attacks();
     init_knight_attacks();
+    init_in_between();
 }
 //Getters and setters for the game state and chess pieces
 U64 get_K(){
@@ -166,7 +172,6 @@ void set_game(U64 val){
 
 //A function that will Update the game bitboard
 void updateGame(){
-    printf("Game Update being ran\n");
     game = 0;
     for (size_t i = 0; i < 12; i++)
     {
@@ -750,16 +755,6 @@ const char* square_to_coordinates[64] = {
     "h8" , "g8", "f8", "e8", "d8", "c8", "b8", "a8"
 };
 
-/*const int coordinates[64] = {
-    ["h1"] = h1 , ["g1"] = g1, ["f1"] = f1, ["e1"] = e1, ["d1"] = d1, ["c1"] = c1, ["b1"] b1, ["a1"] = a1,
-    ["h2"] = h2 , ["g2"] = g2, ["f2"] = f2, ["e2"] = e2, ["d2"] = d2, ["c2"] = c2, ["b2"] b2, ["a2"] = a2,
-    ["h3"] = h3 , ["g3"] = g3, ["f3"] = f3, ["e3"] = e3, ["d3"] = d3, ["c3"] = c3, ["b3"] b3, ["a3"] = a3,
-    ["h4"] = h4 , ["g4"] = g4, ["f4"] = f4, ["e4"] = e4, ["d4"] = d4, ["c4"] = c4, ["b4"] b4, ["a4"] = a4,
-    ["h5"] = h5 , ["g5"] = g5, ["f5"] = f5, ["e5"] = e5, ["d5"] = d5, ["c5"] = c5, ["b5"] b5, ["a5"] = a5,
-    ["h6"] = h6 , ["g6"] = g6, ["f6"] = f6, ["e6"] = e6, ["d6"] = d6, ["c6"] = c6, ["b6"] b6, ["a6"] = a6,
-    ["h7"] = h7 , ["g7"] = g7, ["f7"] = f7, ["e7"] = e7, ["d7"] = d7, ["c7"] = c7, ["b7"] b7, ["a7"] = a7,
-    ["h8"] = h8 , ["g8"] = g8, ["f8"] = f8, ["e8"] = e8, ["d8"] = d8, ["c8"] = c8, ["b8"] b8, ["a8"] = a8
-};*/
 
 //Note: the colours of the pieces have been switched because of the black backround of the console they dont appear properly hence the colours had to be switched
 wchar_t* unicode_pieces[12] = {L" ♚ ", L" ♛ ", L" ♝ ", L" ♞ ", L" ♜ ", L" ♟︎ ", L" ♔ ", L" ♕ ", L" ♗ ", L" ♘ ", L" ♖ ", L" ♙ "};
@@ -956,6 +951,85 @@ bool is_square_attacked(int square, Colour side, U64 occupancy){
     return false;
 }
 
+
+void init_in_between(){
+    for(Square s1 = h1; s1 <= a8; s1++) {
+        //Calculating the in between square for bishops
+        SL_Piece piece[2] = {bishop, rook};
+        for (Square s2 = h1; s2 <= a8; s2++) {
+            arr_rectangular[s1][s2] = inBetween(s2,s1); 
+        }
+    }
+}
+
+// Thanks to Gerd Isenberg for the logic: https://www.talkchess.com/forum3/viewtopic.php?f=7&t=12499&start=14
+
+//This is a function that can quicly calculate the in between squares of 2 squares from and to
+U64 inBetween(int sq1, int sq2)
+{
+    int delta = sq2 - sq1;
+    sq1 += delta & (delta >> 31); // min
+    sq2 -= delta & (delta >> 31); // max
+
+    uint32_t rankDiff, fileDiff, antiDiff, diaxDiff;
+    rankDiff  = (sq2 >>3) - (sq1 >>3);
+    fileDiff  = (sq2 & 7) - (sq1 & 7);
+    antiDiff  = (rankDiff + fileDiff);
+    fileDiff &= 15;
+    antiDiff &= 15;
+    diaxDiff  = (rankDiff ^ fileDiff);
+
+    U64 between;
+    between   =     (rankDiff-1 & 0x000007E0)  >>  4;
+    between  += (U64)fileDiff-1 & 0x0001010101010100;
+    between  += (U64)diaxDiff-1 & 0x0040201008040200;
+    between  += (U64)antiDiff-1 & 0x0000040810204080;
+    between <<= sq1;
+    between  &=(1ULL << sq2) - 1;
+    return between;
+}
+
+U64 get_in_between(int from, int to){
+    return arr_rectangular[from][to];
+}
+
+/* PINS */
+
+//Below are the different types of PINS, and these pins are distinguised by the "Blocker" variable you pass into the x-ray attacks 
+/*
+Motiv 	            |   Blocker 	             |   Target behind Blocker
+-------------------------------------------------------------------------------
+Battery 	        |   own sliding piece 	     |   any square or piece
+Discovered Attack   | 	own piece may remove 	 |   any opposing piece
+Discovered Check    |	own piece may remove 	 |   opposing king
+Pin 	            |   opposing piece 	         |   opposing valuable piece
+Absolute Pin 	    |   opposing piece 	         |   opposing king
+Partial Pin 	    |   opposing sliding piece 	 |   opposing valuable piece
+Skewer 	            |   opposing valuable piece  |   opposing piece
+X-ray 	            |   opposing sliding piece 	 |   own piece
+-------------------------------------------------------------------------------
+*/
+
+// X-ray attacks
+U64 xray_rook(U64 blockers, U64 occupied, Square rookSq){
+    //Get the normal rook attack to the first blocker in the ray
+    U64 attacks = rook_magic_attack(rookSq, occupied);
+    //Isolate only the blockers that the rook has encountered
+    blockers &= attacks;
+    //Remove those blockers from the original occupancy to reveal the pieces behind the first blockers
+    //Then return all the pieces that the rook can access behind the first blocker pieces  on the ray
+    return attacks ^ rook_magic_attack(rookSq, occupied ^ blockers);
+}
+
+U64 xray_bishop(U64 blockers, U64 occupied, Square bishopSq){
+    //Get the normal bishop attack to the first blocker in the ray
+    U64 attacks = bishop_magic_attack(bishopSq, occupied);
+    //Isolate only the blockers that the bishop has encountered
+    blockers &= attacks;
+    //Remove those blockers from the original occupancy to reveal the pieces behind the first blockers
+    //Then return all the pieces that the bishop can access behind the first blocker pieces  on the ray
+    return attacks ^ bishop_magic_attack(bishopSq, occupied ^ blockers);
+}
 
 
 

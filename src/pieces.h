@@ -156,4 +156,7 @@ void fen_parser(const char* fen);
 
 //A function that has to return a boolean value as to whether that square is attacked by the other side/player
 bool is_square_attacked(int square, Colour side, U64 occupancy);
+void init_in_between(); //A function to initialize the arr_rectangular array, that holds all in between squares of from(square) and to(square)
+U64 inBetween(int sq1, int sq2); //A function to find all the squares between the 2 squares, from and to
+U64 get_in_between(int from, int to); //a function to get all the squares in between from and to
 #endif
