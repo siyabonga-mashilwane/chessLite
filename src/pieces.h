@@ -9,7 +9,7 @@
 
 //An array of debruijn possible positions, it received a debruijn sequence (subset) number then returns the index of that position on the
 //true bitboards
-static const int debruijn_hash[] = {
+static int debruijn_hash[] = {
    63,  0, 58,  1, 59, 47, 53,  2,
    60, 39, 48, 27, 54, 33, 42,  3,
    61, 51, 37, 40, 49, 18, 28, 20,
@@ -20,16 +20,21 @@ static const int debruijn_hash[] = {
    44, 24, 15,  8, 23,  7,  6,  5
 };
 
-static const U64 debruijn_number = 0x07EDD5E59A4E28C2ULL; //A special 64bit debruijn master set/sequence to extract some subsets
+static U64 debruijn_number = 0x07EDD5E59A4E28C2ULL; //A special 64bit debruijn master set/sequence to extract some subsets
 
 //It returns an index of the isolated LSB from the bitboard, receives a chess piece bitboard
-static int debruijn_BitScan(U64 bitboard){
-    return debruijn_hash[((bitboard & -bitboard) * debruijn_number)>> 58];
+static inline int debruijn_BitScan(U64 bitboard){
+    return debruijn_hash[((bitboard & -bitboard) * debruijn_number) >> 58];
 }
+
 int bitCount(U64 val); //change to inline and remove it from the header
 //A function that initialises all pre-calculated data
 void init();
 
+static Pieces bitboards_by_color[2][6] = {
+    {K, Q, B, N, R, P},
+    {k, q, b, n, r, p}
+};
 //The following are getters and setters of the pieces where uppercase is white and lowercase is black
 U64 get_K();
 U64 get_Q();
@@ -46,6 +51,7 @@ U64 get_r();
 U64 get_p();
 
 U64 get_game();
+U64 get_side_bitboard(Colour side);
 
 void set_K(U64 K);
 void set_Q(U64 Q);
@@ -86,6 +92,8 @@ void init_rack(char board[8][8]);
 //This function is the only function that can be used to update the game bitboard
 void updateGame();
 
+
+
 //Single Move generators
 U64 eastOne(U64 bitboard);
 U64 westOne(U64 bitboard);
@@ -118,7 +126,7 @@ void init_knight_attacks();
 
 //King moving generators
 void init_king_targets();
-U64 kingMoveTargets(U64 king, U64 empty);
+U64 get_king_target(int index, U64 empty);
 
 //Bishop utilities
 void init_bishop_masks();
@@ -144,7 +152,7 @@ void init_rook_attacks(U64 rook_magics);
 U64 get_sliding_attack(Square sq, U64 occupancy, U64 magic, int rook);
 
 void init_magic_attacks(U64 rook_magics[], U64 bishop_magics[]);
-
+/************************************************************************************************************************************************** */
 //These functions are undeer review they need to be transported to the generator.h
 void print_chessboard();
 extern wchar_t* unicode_pieces[12];
@@ -159,4 +167,11 @@ bool is_square_attacked(int square, Colour side, U64 occupancy);
 void init_in_between(); //A function to initialize the arr_rectangular array, that holds all in between squares of from(square) and to(square)
 U64 inBetween(int sq1, int sq2); //A function to find all the squares between the 2 squares, from and to
 U64 get_in_between(int from, int to); //a function to get all the squares in between from and to
+
+//X-ray functions
+U64 xray_rook(U64 blockers, U64 occupied, Square rookSq);
+U64 xray_bishop(U64 blockers, U64 occupied, Square bishopSq);
+
+//Move generation
+void generate(Colour side);
 #endif

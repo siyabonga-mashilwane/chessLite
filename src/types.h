@@ -43,4 +43,15 @@ struct Magic_sq {
 //  1000 = 8 -> Black king can castle on the queen side
 // thus 1111 = 16 -> every king has castling rights in all directions
 enum {wk = 1, wq = 2, bk = 4, bq = 8};
+
+/****************Move generation*************/
+
+// move list structure
+typedef struct {
+    // moves, 256 because the maximum possible number of legal moves is 218
+    int moves[256];
+    // move count
+    int count;
+} Moves;
+
 #endif

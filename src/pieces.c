@@ -12,7 +12,8 @@
 
 #define get_bit(bitboard, square) ((bitboard) & (1ULL << square))
 #define pop_bit(bitboard, square) (get_bit((bitboard), square) ? ((bitboard) ^= (1ULL << square)) : 0)
-
+#define set_bit(bitboard, square) ((bitboard) |= (1ULL << square))
+#define create_empty_squares(bitboard) (~bitboard) //will produce a bitboard of empty spaces on the bitboard.
 
 
 //Static function prototypes
@@ -51,6 +52,7 @@ int enpessant = no_sq;
 int half_moves = 0;
 int full_moves = 0;
 //**************************************** */
+
 static U64 game = 0;//This variable is used to store the game state bitboard
 
 //The following are the masks of move generators
@@ -110,10 +112,33 @@ U64 get_p(){
     return bitboard_pieces[p];
 }
 
+//Function used to return the game bitboard, both the white and white bitboards
 U64 get_game(){
     return game;
 }
 
+/*
+Function used to return the black or white bitboard, depending on the colour passed in
+representing all the black pieces on the board or all the white pieces on the board
+*/
+
+U64 get_side_bitboard(Colour side){
+    U64 bitboard = 0;
+    if(side == white){
+        for (Square i = K; i <= P; i++)
+        {
+            bitboard |= bitboard_pieces[i];
+        }
+    }else if(side == black){
+        for (Square i = k; i <= p; i++)
+        {
+            bitboard |= bitboard_pieces[i];
+        }
+    }else{
+        printf("\n Invalid side passed in \n");
+    }
+    return bitboard;
+}
 //setters
 void set_K(U64 val){
     bitboard_pieces[K] = val;
@@ -178,13 +203,7 @@ void updateGame(){
         game |= bitboard_pieces[i];
     }
 }
-//A function that will produce a bitboard of empty spaces on the bitboard.
-U64 createEmptySquares(){
-    return ~game;
-}
-
-
-
+//A counting routine to count the number of bits in a bitboard
 int bitCount(U64 val){
     int n = 0;
     while(val){
@@ -429,8 +448,7 @@ void init_king_targets(){
 }
 
 //A function that returns the possible moves of a king in a given game state/position.
-U64 get_king_target(U64 king, U64 empty){
-    int index = (int)log2(king);
+U64 get_king_target(int index, U64 empty){
     return king_attacks[index] & empty;
 }
 
@@ -766,9 +784,9 @@ wchar_t* unicode_pieces[12] = {L" ♚ ", L" ♛ ", L" ♝ ", L" ♞ ", L" ♜ ",
     L" \u2656 ", //White rook
     L" \u2659 ", //White pawn
     L" \u265A ", //Black King
-    L" \u265B ", //Black King
-    L" \u265D ", //Black King
-    L" \u265A ", //Black King
+    L" \u265B ", //Black Queen
+    L" \u265D ", //Black Bishop
+    L" \u265A ", //Black Knight
     L" \u265C ", //Black rook
     L" \u265F " //Black pawn
 };*/
@@ -1021,7 +1039,7 @@ U64 xray_rook(U64 blockers, U64 occupied, Square rookSq){
     return attacks ^ rook_magic_attack(rookSq, occupied ^ blockers);
 }
 
-U64 xray_bishop(U64 blockers, U64 occupied, Square bishopSq){
+U64 xray_bishop(U64 blockers, U64 occupied, Square bishopSq){   
     //Get the normal bishop attack to the first blocker in the ray
     U64 attacks = bishop_magic_attack(bishopSq, occupied);
     //Isolate only the blockers that the bishop has encountered
@@ -1032,7 +1050,267 @@ U64 xray_bishop(U64 blockers, U64 occupied, Square bishopSq){
 }
 
 
+// Move generator
 
+
+// Move encoding
+
+/*
+    binary move bits                               hexidecimal constants
+    
+    0000 0000 0000 0000 0011 1111    source square       0x3f       - source square of piece
+    0000 0000 0000 1111 1100 0000    target square       0xfc0      - Piece target square of piece
+    0000 0000 1111 0000 0000 0000    piece               0xf000     - Piece moved
+    0000 1111 0000 0000 0000 0000    Flags               0xf0000    - Piece move types
+    0111 0000 0000 0000 0000 0000    Piece capture       0x700000  - Pieces to be captured
+*/
+
+/*
+    Pieces to be captured
+    ---------------------------------------
+    0000    - NO piece capture
+    0001    - Queen capture
+    0010    - Bishop capture
+    0011    - Knight capture
+    0100    - Rook capture
+    0101    - Pawn capture
+
+*/
+
+/*
+        /***********FLAGS and Their Binary Representation************\
+
+    code |	promotion |	capture  |  special 1 | special 0 |	kind of move
+    ---------------------------------------------------------------------------------
+    0 	    0 	        0 	        0 	        0 	        quiet moves
+    1 	    0 	        0 	        0 	        1 	        double pawn push
+    2 	    0 	        0 	        1 	        0 	        king castle
+    3 	    0 	        0 	        1 	        1 	        queen castle
+    4 	    0 	        1 	        0 	        0 	        captures
+    5 	    0 	        1 	        0 	        1 	        enpassant-capture
+    8 	    1 	        0 	        0 	        0 	        knight-promotion
+    9 	    1 	        0 	        0 	        1 	        bishop-promotion
+    10 	    1 	        0 	        1 	        0 	        rook-promotion
+    11 	    1 	        0 	        1 	        1 	        queen-promotion
+    12 	    1 	        1 	        0 	        0 	        knight-promo capture
+    13 	    1 	        1 	        0 	        1 	        bishop-promo capture
+    14 	    1 	        1 	        1 	        0 	        rook-promo capture
+    15 	    1 	        1 	        1 	        1 	        queen-promo capture
+
+*/
+
+//note the flags is a 4-bit necessary int from 0-15 
+#define encode(source, target, piece, flags, captured_piece ) ( \
+((source) & 0x3f) |                     \
+( ((target) << 6 ) & 0xfc0) |           \
+(((piece) << 12) & 0xf000)  |           \
+(((flags) << 16) & 0xf0000) |           \
+(((captured_piece) << 20) & 0x700000)   \
+)
+
+#define get_source(move)( (move) & 0x3f )
+#define get_target(move)( ((move) & 0xfc0) >> 6 )
+#define get_piece(move) ( ((move) & 0xf000) >> 12 )
+#define get_flags(move) ( ((move) & 0xf0000) >> 16 )
+#define get_captured_piece(move) ( ((move) & 0x700000) >> 20 )
+#define reset_bit(bitboard) ((bitboard) &= (bitboard) - 1)
+
+//move: its an encoded int value, with a source and a target square, a piece name and flags
+inline void add_move(Moves *list, int move){
+    //add move to the given move list
+    list->moves[list->count] = move;
+    //increase count to point to the next move in the list
+    list->count++;
+}
+
+// Generate is a move generator function
+void generate(Colour side){
+    U64 opponent_piece_attacks[6]; // Array to store attacks by each type of opponent piece
+    int from_square, to_square; // Renamed for consistency and clarity
+
+    Colour opponent_side = side ^ 1; // Renamed for clarity
+
+    U64 current_bitboard, all_opponent_attacks, occupied_without_king; // Renamed for clarity
+    int no_checks = 0; // A variable to control the number of checks generated
+    if(side == black){
+        
+    }else{
+        //White to move
+
+    }
+    //Remove king from the occupied bitboard
+    occupied_without_king = get_game() ^ bitboard_pieces[K];
+    //initialise the opponents piece attacks to 0
+    all_opponent_attacks = 0;
+    //Generate all attacks from the opponent
+    for (Pieces i = bitboards_by_color[opponent_side][0]; i <= bitboards_by_color[opponent_side][5]; i++)
+    {
+        U64 temp = 0;
+        if(i == P){
+            //Generate white pawn attacks
+            temp = bitboard_pieces[i];
+            temp = (northEastOne(temp) | northWestOne(temp));
+            temp &= create_empty_squares(occupied_without_king); //Make sure the pawn attacks are legal and quiet
+            opponent_piece_attacks[5] = temp;
+        }else if(i == p){
+            //Generate black pawn attacks
+            temp = bitboard_pieces[i];
+            temp = (southEastOne(temp) | southWestOne(temp));
+            temp &= create_empty_squares(occupied_without_king); //Make sure the pawn attacks are legal and quiet
+            opponent_piece_attacks[5] = temp;
+        }
+        else if(i == N || i == n){
+            //Generate knight attacks
+            temp = bitboard_pieces[i];
+            temp = knightMoveTargets(temp);
+            temp &= create_empty_squares(occupied_without_king); //Make sure the knight attacks are legal and quiet
+            opponent_piece_attacks[4] = temp;
+        }
+        else if(i == B || i == b){
+            //Generate bishop attacks
+            temp = bitboard_pieces[i];
+            U64 bishops = 0;
+            while (temp)
+            {
+                bishops |= bishop_magic_attack(debruijn_BitScan(temp), occupied_without_king);
+                reset_bit(temp);
+            }
+            temp = bishops;
+            opponent_piece_attacks[2] = temp;
+        }
+        else if(i == R || i == r){
+            //Generate rook attacks
+            temp = bitboard_pieces[i];
+            U64 rooks = 0;
+            while (temp)
+            {
+                rooks |= rook_magic_attack(debruijn_BitScan(temp), occupied_without_king);
+                reset_bit(temp);
+            }
+            temp = rooks;
+            opponent_piece_attacks[3] = temp;
+        }
+        else if(i == Q || i == q){
+            //Generate queen attacks
+            temp = bitboard_pieces[i];
+            U64 queens = 0;
+            while (temp)
+            {
+                queens |= queen_magic_attack(debruijn_BitScan(temp), occupied_without_king);
+                reset_bit(temp);
+            }
+            temp = queens;
+            opponent_piece_attacks[1] = temp;
+        }else if(i == K || i == k){
+            //Generate king attacks
+            temp = bitboard_pieces[i];
+            temp = king_attacks[debruijn_BitScan(temp)];
+            temp &= create_empty_squares(occupied_without_king); //Make sure the king attacks are legal and quiet
+            opponent_piece_attacks[0] = temp;
+        }
+        all_opponent_attacks |= temp;
+    }
+    //initialise king
+    Pieces king = bitboards_by_color[side][0];
+    unsigned short who_is_checking = 0; // A variable to keep track of pieces checking the king
+
+    /*
+        Pieces that are checking the king
+        ---------------------------------------
+        0000    - NO piece checking
+        0001    - Queen checking
+        0010    - Bishop checking
+        0011    - Knight checking
+        0100    - Rook checking
+        0101    - Pawn checking
+    */
+
+    //encode the quite king moves
+    //-------------
+
+    //-----------
+    // check if evasion
+    //    - check if king is in normal check
+    //    - check if king is in double check
+    //    - check if king is in enpassant check
+    // sliding piece checks:
+    //  - qeeen check
+    if(opponent_piece_attacks[1] & king){
+        who_is_checking |= 1;
+        no_checks++;
+    }
+    //  - bishop check
+    if(opponent_piece_attacks[2] & king){
+        who_is_checking |= 2;
+        no_checks++;
+    }
+    //  - Rook check
+    if (opponent_piece_attacks[4] & king)
+    {
+        who_is_checking |= 4;
+        no_checks++;
+    }
+    // Knight piece checks:
+    if(opponent_piece_attacks[3] & king){
+        who_is_checking |= 3;
+        no_checks++;
+    }
+
+    // pawn piece checks:
+    if (opponent_piece_attacks[5] & king)
+    {
+        who_is_checking |= 5;
+        no_checks++;
+    }
+    U64 king_quiet_moves = 0;
+    U64 king_capture_moves = 0;
+    from_square = debruijn_BitScan(bitboard_pieces[king]);
+    //If no_checks > 1 then the king is in double check, meaning we can
+    //  - evade the checks into a quite move
+    //  - Capture an unprotected piece
+    if(no_checks > 1){
+        //generate king quite moves
+        U64 king_moves = get_king_target(from_square, create_empty_squares(all_opponent_attacks | get_game()));
+        //generate captures
+        king_capture_moves = get_side_bitboard(opponent_side) & all_opponent_attacks; // Check if the pieces to capture are protected
+        king_capture_moves = king_capture_moves & get_king_target(from_square, create_empty_squares(0ULL)); //0ULL is used to provide mask for all the squares the king can capture
+        //Block checks
+        return; //Make sure to only produce legal moves to protect the king
+    }
+    //If no_checks == 1 then the king is single check, meaning we can
+    //  - capture
+    //  - evade / quiet
+    //  - block
+    if(no_checks == 1){
+        
+    }
+
+    /*
+        check if capture
+        - check if normal capture
+        - check if enpassant capture
+        - check if enpassant capture is a pin
+        - example below: although black is at an enpassant capture it is pinned 
+        
+            8  .  .  .  .  .  .  .  .
+            7  .  .  .  .  .  .  .  .
+            6  .  .  .  .  .  .  .  .
+            5  .  .  .  .  .  .  .  .
+            4  ♔ .  .  ♟︎ ♙  .  . ♛
+            3  .  .  .  .  .  .  .  .
+            2  .  .  .  .  .  .  .  .
+            1  .  .  .  ♚ .  .  .  .
+               a  b  c  d  e  f  g  h
+            
+        
+        check if pinned piece
+        check for castling
+        - cant castle if king is in check
+        - check if castling ray is attacked
+    */
+
+}
+    
 /*  
     {'r','n','b','q','k','b','n','r'},
     {'p','p','p','p','p','p','p','p'},
