@@ -24,10 +24,10 @@ int main(){
     init_rack(board);
     init();
     
-    char *fen = "8/5k2/3p4/1p1Pp2p/pP2Pp1P/P4P1K/8/8 b - a1 99 50";
-    fen_parser(fen);
+    //char *fen = "8/5k2/3p4/1p1Pp2p/pP2Pp1P/P4P1K/8/8 b - a1 99 50";
+    //fen_parser(fen);
     print_chessboard();
     //generate(white);
-    print_matrix(~(0ULL));
+    printf("%d :\n" , h8/8);
     return 0;
 }

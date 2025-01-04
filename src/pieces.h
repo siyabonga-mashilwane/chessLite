@@ -31,7 +31,7 @@ int bitCount(U64 val); //change to inline and remove it from the header
 //A function that initialises all pre-calculated data
 void init();
 
-static Pieces bitboards_by_color[2][6] = {
+static Pieces pieces_by_color[2][6] = {
     {K, Q, B, N, R, P},
     {k, q, b, n, r, p}
 };
