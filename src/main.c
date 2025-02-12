@@ -4,19 +4,29 @@
 #include "magics.h"
 #include <omp.h>
 #include <locale.h>
+void func_a(int num){
+    printf("\n %d\n", num);
+    num = 95;
+    printf("\n %d\n", num);
+}
 
-
+void func_b(int* num){
+    printf("\n %d\n", num);
+    printf("\n %d\n", *num);
+    *num = 10;
+    func_a(*num);
+}
 int main(){
     //omp_set_num_threads(10);
     char board[8][8] = {
-        {'r',' ',' ','q','k',' ','n','r'},
-        {'p','p','p','p',' ','p','p','p'},
-        {' ',' ','n',' ',' ',' ',' ',' '},
-        {' ',' ',' ',' ','p',' ',' ',' '},
-        {' ',' ',' ',' ','P',' ',' ',' '},
-        {'b',' ',' ','B',' ','N',' ','R'},
-        {'P','P','P','P',' ','P','P','P'},
-        {' ','N','B','Q','K',' ',' ',' '}
+        {'r','n','b','q','k','b','n','r'},
+        {'p','p','p','p','p','p','p','p'},
+        {' ',' ',' ',' ',' ',' ',' ',' '},
+        {' ',' ',' ',' ',' ',' ',' ',' '},
+        {' ',' ',' ',' ',' ',' ',' ',' '},
+        {' ',' ',' ',' ',' ',' ',' ',' '},
+        {'P','P','P','P','P','P','P','P'},
+        {'R','N','B','Q','K','B','N','R'}
     };
     setlocale(LC_ALL, "en_US.UTF-16");
 
@@ -25,9 +35,16 @@ int main(){
     init();
     
     //char *fen = "8/5k2/3p4/1p1Pp2p/pP2Pp1P/P4P1K/8/8 b - a1 99 50";
-    //fen_parser(fen);
+    char* fen = "8/8/8/8/k2Pp2Q/8/8/3K4 w - 0 1";
+    fen_parser(fen);
     print_chessboard();
+    Moves movelist;
+    movelist.count = 0;
+    
+    printf("\n %d \n", movelist.count);
+    generate(black, &movelist);
+    print_generated_moves(&movelist);
+    printf("\n THE FINAL NUBER OF MOVES GENERATED IS %d \n", movelist.count);
     //generate(white);
-    printf("%d :\n" , h8/8);
     return 0;
 }

@@ -54,4 +54,15 @@ typedef struct {
     int count;
 } Moves;
 
+typedef struct {
+    int pinned_square;
+    Pieces piece;
+    U64 piece_push_mask;
+    U64 piece_capture_mask;
+} Pinned;
+
+typedef struct {
+    Pinned pieces[7];
+    int count;
+} Pinned_pieces;
 #endif

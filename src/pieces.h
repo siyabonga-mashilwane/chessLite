@@ -171,7 +171,21 @@ U64 get_in_between(int from, int to); //a function to get all the squares in bet
 //X-ray functions
 U64 xray_rook(U64 blockers, U64 occupied, Square rookSq);
 U64 xray_bishop(U64 blockers, U64 occupied, Square bishopSq);
+void absolute_pins(Pinned_pieces *pinned_pieces,Square kingSq, U64* blockers, U64 occupied,U64 opponent_queens, U64 opponent_bishops, U64 opponent_rooks, Pieces blocker_piece, bool is_pawn);
 
 //Move generation
-void generate(Colour side);
+void generate(Colour side,  Moves *movelist);
+
+//move: its an encoded int value, with a source and a target square, a piece name and flags
+static inline void add_move(Moves *list, int move){
+    //add move to the given move list
+    list->moves[list->count] = move;
+    //increase count to point to the next move in the list
+    list->count++;
+}
+void generate_pinned_pawn_moves(Colour side,Moves* movelist, Pinned_pieces* pinned_pawns,U64 push_mask,U64 capture_mask);
+void init_pinned_pieces(Pinned_pieces *pinned_pieces);
+void encode_quiet_moves(Moves *movelist, Pieces piece, U64 quiet_moves, int from_square, Colour side);
+void encode_captures(Moves *movelist, Pieces piece, U64 piece_attacks, int from_square, Colour side);
+void print_generated_moves(Moves* movelist);
 #endif
