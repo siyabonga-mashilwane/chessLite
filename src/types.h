@@ -19,7 +19,7 @@ typedef enum {
 
 
 //All the uppercase letters are white pieces and all the lowercase letters are black pieces
-typedef enum {K, Q, B, N, R, P, k, q, b, n, r, p} Pieces;
+typedef enum {K, Q, B, N, R, P, k, q, b, n, r, p, no_piece} Pieces;
 
 //Defines the sliding pieces
 typedef enum {bishop, rook} SL_Piece;
@@ -50,7 +50,7 @@ enum {wk = 1, wq = 2, bk = 4, bq = 8};
 typedef struct {
     // moves, 256 because the maximum possible number of legal moves is 218
     int moves[256];
-    // move count
+    // THe number of moves in the list
     int count;
 } Moves;
 
@@ -65,4 +65,14 @@ typedef struct {
     Pinned pieces[7];
     int count;
 } Pinned_pieces;
+
+typedef struct {
+    U64 bitboard_pieces_copy[12];
+    int castle_copy;
+    Colour side_copy;
+    int enpessant_copy;
+    int half_moves_copy;
+    int full_moves_copy;
+} Move_History;
+
 #endif

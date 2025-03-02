@@ -1,6 +1,7 @@
 {
   "files.associations": {
     "MoveGeneratorTest.C": "cpp",
-    "stdio.h": "c"
+    "stdio.h": "c",
+    "types.h": "c"
   }
 }

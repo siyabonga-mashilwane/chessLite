@@ -1106,7 +1106,7 @@ U64 xray_bishop(U64 blockers, U64 occupied, Square bishopSq){
 #define get_piece(move) ( ((move) & 0xf000) >> 12 )
 #define get_flags(move) ( ((move) & 0xf0000) >> 16 )
 #define get_captured_piece(move) ( ((move) & 0x700000) >> 20 )
-#define reset_lsb(bitboard) ((bitboard) &= (bitboard) - 1)
+#define reset_lsb(bitboard) ((bitboard) &= ((bitboard) - 1))
 #define get_pawn(side) ( bitboard_pieces[pieces_by_color[side][5]] )
 #define get_rook(side) ( bitboard_pieces[pieces_by_color[side][4]] )
 #define get_knight(side) ( bitboard_pieces[pieces_by_color[side][3]] )
@@ -1122,7 +1122,7 @@ void absolute_pins(Pinned_pieces *pinned_pieces,Square kingSq, U64* blockers, U6
         if(is_pawn && enpessant != no_sq){
             occupied ^= get_bit(occupied, enpessant);
         }
-        U64 mask = ((1 << kingSq) & (xray_bishop(*blockers, occupied, queenSq) | xray_rook(*blockers, occupied, queenSq))) ? get_in_between(kingSq, queenSq) : 0ULL;
+        U64 mask = ((1ULL << kingSq) & (xray_bishop(*blockers, occupied, queenSq) | xray_rook(*blockers, occupied, queenSq))) ? get_in_between(kingSq, queenSq) : 0ULL;
         
         U64 pinned_square = *blockers & mask;
         // Ensure there is exactly one piece between the king and the queen
@@ -1196,10 +1196,10 @@ void generate(Colour side, Moves *movelist){
     //initialise the opponents piece attacks to 0
     all_opponent_attacks = 0ULL;
     //Generate all attacks from the opponent
-    printf("generating all opponent attacks \n");
+    ///printf("generating all opponent attacks \n");
     for (Pieces i = pieces_by_color[opponent_side][0]; i <= pieces_by_color[opponent_side][5]; i++)
     {
-        printf("generating attacks for piece %d \n", i);
+        ///printf("generating attacks for piece %d \n", i);
         U64 temp = 0;
         if(i == pieces_by_color[opponent_side][5]){
             //Generate white pawn attacks
@@ -1264,7 +1264,7 @@ void generate(Colour side, Moves *movelist){
         }
         all_opponent_attacks |= temp;
     }
-    printf("DONE Generating all opponent attacks \n");
+    ///printf("DONE Generating all opponent attacks \n");
     //initialise king
     unsigned short who_is_checking = 0; // A variable to keep track of pieces checking the king
 
@@ -1289,7 +1289,7 @@ void generate(Colour side, Moves *movelist){
 
     // sliding piece checks:
     //  - qeeen check
-    printf("Genereating qeeen check\n");
+    ///printf("Genereating qeeen check\n");
     if(opponent_piece_attacks[1] & get_king(side)){
         who_is_checking |= 1;
         //Search for the actual queen producing the check
@@ -1306,7 +1306,7 @@ void generate(Colour side, Moves *movelist){
         no_checks++;
     }
     //  - bishop check
-    printf("Genereating bishop check\n");
+    ///printf("Genereating bishop check\n");
     if(opponent_piece_attacks[2] & get_king(side)){
         who_is_checking |= 2;
         //Search for the actual bishop producing the check
@@ -1323,7 +1323,7 @@ void generate(Colour side, Moves *movelist){
         no_checks++;
     }
     //  - Rook check
-    printf("Genereating rook check\n");
+    ///printf("Genereating rook check\n");
     if (opponent_piece_attacks[4] & get_king(side))
     {
         who_is_checking |= 8;
@@ -1342,7 +1342,7 @@ void generate(Colour side, Moves *movelist){
         no_checks++;
     }
     // Knight piece checks:
-    printf("Genereating knight check\n");
+    ///printf("Genereating knight check\n");
     if(opponent_piece_attacks[3] & get_king(side)){
         who_is_checking |= 4;
         //Search for the actual knight producing the check
@@ -1361,7 +1361,7 @@ void generate(Colour side, Moves *movelist){
     }
 
     // pawn piece checks:
-    printf("Genereating pawn check\n");
+    ///printf("Genereating pawn check\n");
     if (opponent_piece_attacks[5] & get_king(side))
     {
         who_is_checking |= 16;
@@ -1372,12 +1372,12 @@ void generate(Colour side, Moves *movelist){
         capture_mask =(side == white)? (get_pawn_attack(white,from_square) & opponent_pawns) : (get_pawn_attack(black,from_square) & opponent_pawns);
         no_checks++;
     }
-    printf("generate king quite moves\n"); 
+    ///printf("generate king quite moves\n"); 
     //generate king quite moves
     U64 king_quiet_moves = get_king_target(from_square, create_empty_squares(all_opponent_attacks | get_game()));
-    print_matrix(create_empty_squares(all_opponent_attacks | get_game()));
-    print_matrix( king_attacks[from_square] );
-    print_matrix(king_quiet_moves);
+    ///print_matrix(create_empty_squares(all_opponent_attacks | get_game()));
+    ///print_matrix( king_attacks[from_square] );
+    ///print_matrix(king_quiet_moves);
     (king_quiet_moves) ? encode_quiet_moves(movelist,pieces_by_color[side][0],king_quiet_moves, from_square, side): (void)0;
     //generate King captures, which may capture checking piece
     U64 protected_pieces = get_side_bitboard(opponent_side) & all_opponent_attacks; // Check if the pieces to capture are protected
@@ -1387,12 +1387,12 @@ void generate(Colour side, Moves *movelist){
     encode_captures(movelist, pieces_by_color[side][0], king_capture_moves, from_square, side);
 
     if(no_checks > 1){
-        printf("The king is in check \n"); 
+        ///printf("The king is in check \n"); 
         return; 
     }
 
     //generate castling moves
-    printf("Generate castling moves \n");
+    ///printf("Generate castling moves \n");
     if(no_checks == 0){
         if (side == white)
         {
@@ -1410,13 +1410,13 @@ void generate(Colour side, Moves *movelist){
     U64 pawns = get_pawn(side);
     Pinned_pieces pinned_pawns;
     init_pinned_pieces(&pinned_pawns);
-    printf("Generating absolute pins \n");
+    ///printf("Generating absolute pins \n");
     absolute_pins(&pinned_pawns, king_square, &pawns, get_game(), get_queen(opponent_side), get_bishop(opponent_side), get_rook(opponent_side), pieces_by_color[side][5], true);
     // generate quiet pawn pushes
     U64 single_push = (side == white)? wSinglePush(pawns, create_empty_squares(get_game())) : bSinglePush(pawns, create_empty_squares(get_game()));
     U64 double_push = (side == white)? wDoublePush(pawns, create_empty_squares(get_game())) : bDoublePush(pawns, create_empty_squares(get_game()));
     //genereate double pushes
-    printf("Generating double Push pawn \n");
+    ///printf("Generating double Push pawn \n");
     while (double_push)
     {
         to_square = debruijn_BitScan(double_push) & push_mask; //Only filter out legal moves
@@ -1426,7 +1426,7 @@ void generate(Colour side, Moves *movelist){
     }
     
     //generate single pushes
-    printf("Generating single Push pawn \n");
+    ///printf("Generating single Push pawn \n");
     while (single_push)
     {
         to_square = debruijn_BitScan(single_push) & push_mask; //Only filter out legal moves
@@ -1445,19 +1445,20 @@ void generate(Colour side, Moves *movelist){
     }
     
     //generate pawn attacks
-    printf("Generating pawn attacks \n");
+    ///printf("Generating pawn attacks \n");
     while (pawns)
     {
         from_square = debruijn_BitScan(pawns);
         U64 attacks = get_pawn_attack(side, from_square) & capture_mask;
-        attacks ^= get_side_bitboard(side);
-        printf("Withing encode captures");
+        attacks &= create_empty_squares(get_side_bitboard(side));
+        
+        //printf("Withing encode captures");
         encode_captures(movelist, pieces_by_color[side][5], attacks, from_square, side);
-        printf("After encode captures");
+        //printf("After encode captures");
         reset_lsb(pawns);
     }
     
-    printf(" \n DONE Generating pawn ATTACKS \n");
+    ///printf(" \n DONE Generating pawn ATTACKS \n");
 
     //generate pinned pawns
     generate_pinned_pawn_moves(side,movelist,&pinned_pawns,push_mask,capture_mask);
@@ -1470,7 +1471,7 @@ void generate(Colour side, Moves *movelist){
     //remove pinned knight but dont generate attacks for it since a pinned knight cant move in the direction of the pinner
     absolute_pins(&pinned_knights, king_square, &knights, get_game(), get_queen(opponent_side), get_bishop(opponent_side), get_rook(opponent_side), pieces_by_color[side][3], false);
     
-    printf("Generating knight attacks \n");
+    ///printf("Generating knight attacks \n");
     while (knights)
     {
         from_square = debruijn_BitScan(knights);
@@ -1488,7 +1489,7 @@ void generate(Colour side, Moves *movelist){
     Pinned_pieces pinned_bishops;
     init_pinned_pieces(&pinned_bishops);
     absolute_pins(&pinned_bishops, king_square, &bishops, get_game(), get_queen(opponent_side), get_bishop(opponent_side), get_rook(opponent_side), pieces_by_color[side][2], false);
-    printf("Generating bishop attacks \n");
+    ///printf("Generating bishop attacks \n");
     while(bishops){
         from_square = debruijn_BitScan(bishops);
         U64 attacks = bishop_magic_attack(from_square, get_game());
@@ -1514,7 +1515,7 @@ void generate(Colour side, Moves *movelist){
     Pinned_pieces pinned_rooks;
     init_pinned_pieces(&pinned_rooks);
     absolute_pins(&pinned_rooks, king_square, &rooks, get_game(), get_queen(opponent_side), get_bishop(opponent_side), get_rook(opponent_side), pieces_by_color[side][4], false);
-    printf("Generating rook attacks \n");
+    ///printf("Generating rook attacks \n");
     while (rooks)
     {
         from_square = debruijn_BitScan(rooks);
@@ -1542,12 +1543,12 @@ void generate(Colour side, Moves *movelist){
     Pinned_pieces pinned_queens;
     init_pinned_pieces(&pinned_queens);
     absolute_pins(&pinned_queens, king_square, &queens, get_game(), get_queen(opponent_side), get_bishop(opponent_side), get_rook(opponent_side), pieces_by_color[side][1], false);
-    printf("Generating queen attacks \n");
+    ///printf("Generating queen attacks \n");
     while (queens)
     {
         from_square = debruijn_BitScan(queens);
         U64 attacks = queen_magic_attack(from_square, get_game());
-        print_matrix(attacks);
+        ///print_matrix(attacks);
         U64 quiets = (attacks & create_empty_squares(get_game())) & push_mask;
         (quiets) ? encode_quiet_moves(movelist, pieces_by_color[side][1], quiets, from_square, side): (void)0 ;
         attacks &= (get_side_bitboard(opponent_side) & capture_mask);
@@ -1590,16 +1591,16 @@ void generate(Colour side, Moves *movelist){
         - cant castle if king is in check
         - check if castling ray is attacked
     */
-   printf("\n DONE GENERATING MOVES \n");
+   ///printf("\n DONE GENERATING MOVES \n");
 }
 void init_pinned_pieces(Pinned_pieces *pinned_pieces) {
     pinned_pieces->count = 0;
     memset(pinned_pieces->pieces, 0, sizeof(pinned_pieces->pieces));
 }
 void generate_pinned_pawn_moves(Colour side,Moves* movelist, Pinned_pieces* pinned_pawns,U64 push_mask,U64 capture_mask){
-    printf("\n GENERATING PINNED PAWNS \n");
+    ///printf("\n GENERATING PINNED PAWNS \n");
     for (int i = 0; i < pinned_pawns->count; i++) {
-        printf("\n \t Checking PAWN %d \n", i);
+        ///printf("\n \t Checking PAWN %d \n", i);
         int from_square = pinned_pawns->pieces[i].pinned_square;
         U64 piece_push_mask = pinned_pawns->pieces[i].piece_push_mask;
         U64 piece_capture_mask = pinned_pawns->pieces[i].piece_capture_mask;
@@ -1650,36 +1651,37 @@ void encode_quiet_moves(Moves *movelist, Pieces piece, U64 quiet_moves, int from
 //This function is used to check pieces we are capturing then encode the relevant information
 void encode_captures(Moves *movelist, Pieces piece, U64 piece_attacks, int from_square, Colour side){
     Colour opponent_side = side ^ 1;
-    printf(" \n \t ENCODING CAPTURES FOR %d \n", piece);
+    ///printf(" \n \t ENCODING CAPTURES FOR %d \n", piece);
     while(piece_attacks){
         int to_square = debruijn_BitScan(piece_attacks);
-        U64 attack = 1 << to_square;
+       
+        U64 attack = (1ULL << to_square);
         int flags = 4; //assign the capture flag
+        Pieces promo_capture = no_piece;
         //Attacking opponent queen
         if(attack & get_queen(opponent_side)){
             //Handle pawn promotion capture
-            if( (piece ==  P && to_square/8 == 7) || (piece ==  p && to_square/8 == 0))    flags = 15; //Queen promotion capture
-            add_move(movelist, encode(from_square, to_square, piece, flags, 1));
+            if( (piece ==  P && to_square/8 == 7) || (piece ==  p && to_square/8 == 0))    promo_capture = pieces_by_color[opponent_side][1];
+            else add_move(movelist, encode(from_square, to_square, piece, flags, 1));
             
         }
         //attacking oponent bishop
         else if(attack & get_bishop(opponent_side)){
             //Handle pawn promotion capture
-            if( (piece ==  P && to_square/8 == 7) || (piece ==  p && to_square/8 == 0))    flags = 13; //Bishop promotion capture
-            add_move(movelist, encode(from_square, to_square, piece, flags, 2));
+            if( (piece ==  P && to_square/8 == 7) || (piece ==  p && to_square/8 == 0))    promo_capture = pieces_by_color[opponent_side][2];
+            else add_move(movelist, encode(from_square, to_square, piece, flags, 2));
         }
         //attacking opponent knight
         else if(attack & get_knight(opponent_side)){
             //Handle pawn promotion capture
-            if( (piece ==  P && to_square/8 == 7) || (piece ==  p && to_square/8 == 0))    flags = 12; //Knight promotion capture
-            add_move(movelist, encode(from_square, to_square, piece, flags, 3));
+            if( (piece ==  P && to_square/8 == 7) || (piece ==  p && to_square/8 == 0))    promo_capture = pieces_by_color[opponent_side][3];
+            else add_move(movelist, encode(from_square, to_square, piece, flags, 3));
         }
         //attacking opponent rook
         else if(attack & get_rook(opponent_side)){
             //Handle pawn promotion capture
-            if( (piece ==  P && to_square/8 == 7) || (piece ==  p && to_square/8 == 0))    flags = 14; //Rook promotion capture
-
-            add_move(movelist, encode(from_square, to_square, piece, flags, 4));
+            if( (piece ==  P && to_square/8 == 7) || (piece ==  p && to_square/8 == 0))     promo_capture = pieces_by_color[opponent_side][4];
+            else add_move(movelist, encode(from_square, to_square, piece, flags, 4));
         }else if(attack & get_pawn(opponent_side)){
             add_move(movelist, encode(from_square, to_square, piece, flags, 5));
         }
@@ -1687,19 +1689,28 @@ void encode_captures(Moves *movelist, Pieces piece, U64 piece_attacks, int from_
         //  - Handle enpessant
         else if( piece == P && (to_square - 8) == enpessant){
             flags = 5; //turn on the enpessant capture flag
-            add_move(movelist, encode(from_square, to_square, piece, flags, 5));
+            add_move(movelist, encode(from_square, to_square, piece, flags, pieces_by_color[opponent_side][5]));
         }
         else if( piece == p && (to_square + 8) == enpessant){
             flags = 5; //turn on the enpessant capture flag
-            add_move(movelist, encode(from_square, to_square, piece, flags, 5));
+            add_move(movelist, encode(from_square, to_square, piece, flags, pieces_by_color[opponent_side][5]));
+        }
+        //promotion captures
+        if(promo_capture != no_piece ){
+        
+            add_move(movelist, encode(from_square, to_square, piece, 12, promo_capture)); 
+            add_move(movelist, encode(from_square, to_square, piece, 13, promo_capture)); 
+            add_move(movelist, encode(from_square, to_square, piece, 14, promo_capture)); 
+            add_move(movelist, encode(from_square, to_square, piece, 15, promo_capture));
+
         }
         reset_lsb(piece_attacks);
     }
-    printf(" \n \t DONE ENCODING CAPTURES \n");
+    ///printf(" \n \t DONE ENCODING CAPTURES \n");
 }
 
 void print_generated_moves(Moves* movelist){
-    printf("generated moves");
+    ///printf("generated moves");
     for(int i = 0; i < movelist->count; i++){
         int from = get_source(movelist->moves[i]);
         int to = get_target(movelist->moves[i]);
@@ -1708,6 +1719,270 @@ void print_generated_moves(Moves* movelist){
         int captured_piece = get_captured_piece(movelist->moves[i]);
         printf("\nFrom: %s, To: %s, Piece: %d, Flags: %d, Captured: %d..\n", square_to_coordinates[from], square_to_coordinates[to], piece, flags, captured_piece);
     }
+}
+
+
+
+
+Move_History make_move(int move, Colour side){
+    //Preserve the original state before copying editing the moves
+    Move_History prev_state;
+    memcpy(prev_state.bitboard_pieces_copy, bitboard_pieces, sizeof(bitboard_pieces));
+    prev_state.enpessant_copy = enpessant;
+    prev_state.castle_copy = castle;
+    prev_state.side_copy = side;
+    prev_state.half_moves_copy = half_moves;
+    prev_state.full_moves_copy = full_moves;
+
+    int flags = get_flags(move);
+    Square from_square = get_source(move);
+    Square to_square = get_target(move);
+    Pieces piece = get_piece(move);
+
+    if(get_captured_piece(move) == pieces_by_color[side^1][4]){
+        //remove castling rights of the opponent if rook is captured
+        (to_square == h1) ? castle &= ~(wq): (0);
+        (to_square == a1) ? castle &= ~(wk): (0);
+        (to_square == h8) ? castle &= ~(bq): (0);
+        (to_square == a8) ? castle &= ~(bk): (0);
+    }
+    if(piece == pieces_by_color[side][4]){
+        //remove castling rights of the player if rook is moved
+        (from_square == h1) ? castle &= ~(wq): (0);
+        (from_square == a1) ? castle &= ~(wk): (0);
+        (from_square == h8) ? castle &= ~(bq): (0);
+        (from_square == a8) ? castle &= ~(bk): (0);
+    }
+
+    if (piece == pieces_by_color[side][0])
+    {
+        //remove castling rights of the player if king moved
+        if (side == white) {
+            castle &= ~(wk | wq);
+        } else {
+            castle &= ~(bk | bq);
+        }
+    }
+    
+    switch (flags) {
+        case 0: // handle quiet moves
+            bitboard_pieces[piece] ^= (1ULL << from_square);
+            bitboard_pieces[piece] |= (1ULL << to_square);
+            break;
+
+        case 1: // Handle double push pawns
+            bitboard_pieces[piece] ^= (1ULL << from_square);
+            bitboard_pieces[piece] |= (1ULL << to_square);
+            enpessant = to_square;
+            break;
+
+        case 2: // Kingside castling
+            bitboard_pieces[piece] ^= (1ULL << from_square);
+            bitboard_pieces[piece] |= (1ULL << to_square);
+            {
+                Square rook_from_sq = (side == white) ? h1 : h8;
+                Square rook_to_sq = (side == white) ? f1 : f8;
+                bitboard_pieces[pieces_by_color[side][4]] ^= (1ULL << rook_from_sq);
+                bitboard_pieces[pieces_by_color[side][4]] |= (1ULL << rook_to_sq);
+                // update castling rights
+                castle &= (side == white) ? ~(wk | wq) : ~(bk | bq);
+            }
+            break;
+
+        case 3: // Queenside castling
+            bitboard_pieces[piece] ^= (1ULL << from_square);
+            bitboard_pieces[piece] |= (1ULL << to_square);
+            {
+                Square rook_from_sq = (side == white) ? a1 : a8;
+                Square rook_to_sq = (side == white) ? d1 : d8;
+                bitboard_pieces[pieces_by_color[side][4]] ^= (1ULL << rook_from_sq);
+                bitboard_pieces[pieces_by_color[side][4]] |= (1ULL << rook_to_sq);
+                // update castling rights
+                castle &= (side == white) ? ~(wk | wq) : ~(bk | bq);
+            }
+            break;
+
+        case 4: // handle captures
+            bitboard_pieces[piece] ^= (1ULL << from_square);
+            bitboard_pieces[piece] |= (1ULL << to_square);
+            bitboard_pieces[get_captured_piece(move)] ^= (1ULL << to_square);
+            break;
+
+        case 8: // quiet promotion to knight
+            bitboard_pieces[piece] ^= (1ULL << from_square);
+            bitboard_pieces[pieces_by_color[side][3]] |= (1ULL << to_square);
+            break;
+
+        case 9: // quiet promotion to bishop
+            bitboard_pieces[piece] ^= (1ULL << from_square);
+            bitboard_pieces[pieces_by_color[side][2]] |= (1ULL << to_square);
+            break;
+
+        case 10: // quiet promotion to rook
+            bitboard_pieces[piece] ^= (1ULL << from_square);
+            bitboard_pieces[pieces_by_color[side][4]] |= (1ULL << to_square);
+            break;
+
+        case 11: // quiet promotion to queen
+            bitboard_pieces[piece] ^= (1ULL << from_square);
+            bitboard_pieces[pieces_by_color[side][1]] |= (1ULL << to_square);
+            break;
+
+        case 12: // capture promotion to knight
+            bitboard_pieces[piece] ^= (1ULL << from_square);
+            bitboard_pieces[get_captured_piece(move)] ^= (1ULL << to_square);
+            bitboard_pieces[pieces_by_color[side][3]] |= (1ULL << to_square);
+            break;
+
+        case 13: // capture promotion to bishop
+            bitboard_pieces[piece] ^= (1ULL << from_square);
+            bitboard_pieces[get_captured_piece(move)] ^= (1ULL << to_square);
+            bitboard_pieces[pieces_by_color[side][2]] |= (1ULL << to_square);
+            break;
+
+        case 14: // capture promotion to rook
+            bitboard_pieces[piece] ^= (1ULL << from_square);
+            bitboard_pieces[get_captured_piece(move)] ^= (1ULL << to_square);
+            bitboard_pieces[pieces_by_color[side][4]] |= (1ULL << to_square);
+            break;
+
+        case 15: // capture promotion to queen
+            bitboard_pieces[piece] ^= (1ULL << from_square);
+            bitboard_pieces[get_captured_piece(move)] ^= (1ULL << to_square);
+            bitboard_pieces[pieces_by_color[side][1]] |= (1ULL << to_square);
+            break;
+
+        case 5: // handle en passant
+            bitboard_pieces[piece] ^= (1ULL << from_square);
+            bitboard_pieces[piece] |= (1ULL << to_square);
+            bitboard_pieces[get_captured_piece(move)] ^= (1ULL << enpessant);
+            enpessant = no_sq;
+            break;
+        default:
+            printf("Invalid move flag %d \n", flags);
+            break;
+    }
+    
+    
+    updateGame();
+    return prev_state;
+}
+
+
+//This part of the code requires a history of moves to be able to undo the moves
+void unmake_move(Move_History* prev_state){
+    //The collowing code needs to be evaluated for future code improvements
+
+    /*int flags = get_flags(move);
+    Square from_square = get_source(move);
+    Square to_square = get_target(move);
+    Pieces piece = get_piece(move);
+    switch (flags) {
+        case 0: // handle quiet moves
+            bitboard_pieces[piece] |= (1ULL << from_square);
+            bitboard_pieces[piece] ^= (1ULL << to_square);
+            break;
+
+        case 1: // Handle double push pawns
+            bitboard_pieces[piece] |= (1ULL << from_square);
+            bitboard_pieces[piece] ^= (1ULL << to_square);
+            enpessant = to_square;
+            break;
+
+        case 2: // Kingside castling
+            bitboard_pieces[piece] |= (1ULL << from_square);
+            bitboard_pieces[piece] ^= (1ULL << to_square);
+            {
+                Square rook_from_sq = (side == white) ? h1 : h8;
+                Square rook_to_sq = (side == white) ? f1 : f8;
+                bitboard_pieces[pieces_by_color[side][4]] |= (1ULL << rook_from_sq);
+                bitboard_pieces[pieces_by_color[side][4]] ^= (1ULL << rook_to_sq);
+                // update castling rights
+                castle &= (side == white) ? ~(wk | wq) : ~(bk | bq);
+            }
+            break;
+
+        case 3: // Queenside castling
+            bitboard_pieces[piece] |= (1ULL << from_square);
+            bitboard_pieces[piece] ^= (1ULL << to_square);
+            {
+                Square rook_from_sq = (side == white) ? a1 : a8;
+                Square rook_to_sq = (side == white) ? d1 : d8;
+                bitboard_pieces[pieces_by_color[side][4]] ^= (1ULL << rook_from_sq);
+                bitboard_pieces[pieces_by_color[side][4]] |= (1ULL << rook_to_sq);
+                // update castling rights
+                castle &= (side == white) ? ~(wk | wq) : ~(bk | bq);
+            }
+            break;
+
+        case 4: // handle captures
+            bitboard_pieces[piece] |= (1ULL << from_square);
+            bitboard_pieces[piece] ^= (1ULL << to_square);
+            bitboard_pieces[get_captured_piece(move)] ^= (1ULL << to_square);
+            break;
+
+        case 8: // quiet promotion to knight
+            bitboard_pieces[piece] |= (1ULL << from_square);
+            bitboard_pieces[pieces_by_color[side][3]] ^= (1ULL << to_square);
+            break;
+
+        case 9: // quiet promotion to bishop
+            bitboard_pieces[piece] |= (1ULL << from_square);
+            bitboard_pieces[pieces_by_color[side][2]] ^= (1ULL << to_square);
+            break;
+
+        case 10: // quiet promotion to rook
+            bitboard_pieces[piece] |= (1ULL << from_square);
+            bitboard_pieces[pieces_by_color[side][4]] ^= (1ULL << to_square);
+            break;
+
+        case 11: // quiet promotion to queen
+            bitboard_pieces[piece] |= (1ULL << from_square);
+            bitboard_pieces[pieces_by_color[side][1]] ^= (1ULL << to_square);
+            break;
+
+        case 12: // capture promotion to knight
+            bitboard_pieces[piece] |= (1ULL << from_square);
+            bitboard_pieces[get_captured_piece(move)] |= (1ULL << to_square);
+            bitboard_pieces[pieces_by_color[side][3]] ^= (1ULL << to_square);
+            break;
+
+        case 13: // capture promotion to bishop
+            bitboard_pieces[piece] |= (1ULL << from_square);
+            bitboard_pieces[get_captured_piece(move)] |= (1ULL << to_square);
+            bitboard_pieces[pieces_by_color[side][2]] ^= (1ULL << to_square);
+            break;
+
+        case 14: // capture promotion to rook
+            bitboard_pieces[piece] |= (1ULL << from_square);
+            bitboard_pieces[get_captured_piece(move)] |= (1ULL << to_square);
+            bitboard_pieces[pieces_by_color[side][4]] ^= (1ULL << to_square);
+            break;
+
+        case 15: // capture promotion to queen
+            bitboard_pieces[piece] |= (1ULL << from_square);
+            bitboard_pieces[get_captured_piece(move)] |= (1ULL << to_square);
+            bitboard_pieces[pieces_by_color[side][1]] ^= (1ULL << to_square);
+            break;
+
+        case 5: // handle en passant
+            bitboard_pieces[piece] |= (1ULL << from_square);
+            bitboard_pieces[piece] ^= (1ULL << to_square);
+            bitboard_pieces[get_captured_piece(move)] |= (1ULL << enpessant);
+            enpessant = no_sq;
+            break;
+        default:
+            printf("Invalid move flag %d \n", flags);
+            break;
+    }*/
+    memcpy(bitboard_pieces, prev_state->bitboard_pieces_copy, sizeof(prev_state->bitboard_pieces_copy));
+    castle = prev_state->castle_copy;
+    enpessant = prev_state->enpessant_copy;
+    side = prev_state->side_copy;
+    half_moves = prev_state->half_moves_copy;
+    full_moves = prev_state->full_moves_copy;
+
+    updateGame();
 }
 
 /*  
