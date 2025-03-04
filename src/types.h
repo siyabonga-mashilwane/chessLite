@@ -49,7 +49,7 @@ enum {wk = 1, wq = 2, bk = 4, bq = 8};
 // move list structure
 typedef struct {
     // moves, 256 because the maximum possible number of legal moves is 218
-    int moves[256];
+    unsigned int moves[256];
     // THe number of moves in the list
     int count;
 } Moves;

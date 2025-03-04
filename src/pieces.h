@@ -189,6 +189,12 @@ void encode_quiet_moves(Moves *movelist, Pieces piece, U64 quiet_moves, int from
 void encode_captures(Moves *movelist, Pieces piece, U64 piece_attacks, int from_square, Colour side);
 void print_generated_moves(Moves* movelist);
 
-Move_History make_move(int move, Colour side);
+Move_History make_move(unsigned int move, Colour side);
 void unmake_move(Move_History* prev_state);
+
+//TO be removed
+U64 Perft(int depth);
+U64 Divide(int depth);
+
+void bitboards_to_fen(char *fen);
 #endif

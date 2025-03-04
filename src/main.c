@@ -4,37 +4,22 @@
 #include "magics.h"
 #include <omp.h>
 #include <locale.h>
-U64 Perft(int depth, Colour side)
-{
-    Moves movelist;
-    movelist.count = 0;
-    int n_moves, i;
-    U64 nodes = 0;
+#include <string.h>
 
-    if (depth == 0) 
-        return 1ULL;
-    generate(side, &movelist);
-    n_moves = movelist.count;
-    printf("Generated %d moves at depth %d, side is %s\n", n_moves, depth, (side==white?"white":"black:"));
-    for (i = 0; i < n_moves; i++) {
-        Move_History prev_move = make_move(movelist.moves[i], side);
-        nodes += Perft(depth-1, side^1);
-        unmake_move(&prev_move);
-    }
-    
-    return nodes;
-}
+
+
+
 int main(){
     //omp_set_num_threads(10);
     char board[8][8] = {
-        {'r','n','b','q','k','b','n','r'},
-        {'p','p','p','p','p','p','p','p'},
-        {' ',' ',' ',' ',' ',' ',' ',' '},
-        {' ',' ',' ',' ',' ',' ',' ',' '},
-        {' ',' ',' ',' ',' ',' ',' ',' '},
-        {' ',' ',' ',' ',' ',' ',' ',' '},
-        {'P','P','P','P','P','P','P','P'},
-        {'R','N','B','Q','K','B','N','R'}
+        {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
+        {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
+        {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
+        {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
+        {' ', ' ', 'r', 'p', ' ', ' ', ' ', ' '},
+        {' ', ' ', 'P', ' ', ' ', ' ', ' ', ' '},
+        {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
+        {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '}
     };
     setlocale(LC_ALL, "en_US.UTF-16");
 
@@ -56,6 +41,23 @@ int main(){
     printf("\n THE FINAL NUBER OF MOVES GENERATED IS %d \n", movelist.count);
     //generate(white);
     */
-    printf("\n Number of nodes is: %llu \n", Perft(3, white));
+    //printf("\n Number of nodes is: %llu \n", Perft(5, white));
+    //fen_parser("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/P1N2Q1p/1PPBBPPP/1R2K2R w Kkq - 0 1");
+    fen_parser("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+    //fen_parser("r3k2r/p1ppqpb1/bn2pnp1/1B1PN3/1p2P3/2N2Q1p/PPPB1PPP/R3K2R b KQkq - 0 1");
+    /*print_chessboard();
+    Moves temp;
+    temp.count = 0;
+    memset(temp.moves, 0, sizeof(temp.moves));
+    generate(white, &temp);
+    printf("number of moves %d\n", temp.count);
+    print_generated_moves(&temp);*/
+    printf("\nNodes searched: %llu \n", Divide(1));
+    
     return 0;
 }
+
+/*"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1"
+"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1"
+"r3k2r/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b KQkq - 0 1"
+"r3k2r/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b KQkq - 0 1"*/
