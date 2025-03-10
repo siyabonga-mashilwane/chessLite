@@ -155,6 +155,7 @@ void init_magic_attacks(U64 rook_magics[], U64 bishop_magics[]);
 /************************************************************************************************************************************************** */
 //These functions are undeer review they need to be transported to the generator.h
 void print_chessboard();
+unsigned int coordinate_to_square(char* coordinate);
 extern wchar_t* unicode_pieces[12];
 extern char ascii_pieces[12];
 extern int char_pieces[];
@@ -174,7 +175,7 @@ U64 xray_bishop(U64 blockers, U64 occupied, Square bishopSq);
 void absolute_pins(Pinned_pieces *pinned_pieces,Square kingSq, U64* blockers, U64 occupied,U64 opponent_queens, U64 opponent_bishops, U64 opponent_rooks, Pieces blocker_piece, bool is_pawn);
 
 //Move generation
-void generate(Colour side,  Moves *movelist);
+void generate(Moves *movelist);
 
 //move: its an encoded int value, with a source and a target square, a piece name and flags
 static inline void add_move(Moves *list, int move){
@@ -185,16 +186,14 @@ static inline void add_move(Moves *list, int move){
 }
 void generate_pinned_pawn_moves(Colour side,Moves* movelist, Pinned_pieces* pinned_pawns,U64 push_mask,U64 capture_mask);
 void init_pinned_pieces(Pinned_pieces *pinned_pieces);
-void encode_quiet_moves(Moves *movelist, Pieces piece, U64 quiet_moves, int from_square, Colour side);
-void encode_captures(Moves *movelist, Pieces piece, U64 piece_attacks, int from_square, Colour side);
+void encode_quiet_moves(Moves *movelist, Pieces piece, U64 quiet_moves, int from_square);
+void encode_captures(Moves *movelist, Pieces piece, U64 piece_attacks, int from_square);
 void print_generated_moves(Moves* movelist);
-
-Move_History make_move(unsigned int move, Colour side);
+Move_History make_move(unsigned int move);
 void unmake_move(Move_History* prev_state);
 
 //TO be removed
 U64 Perft(int depth);
-U64 Divide(int depth);
-
+U64 Divide(int depth, unsigned int cutoff_from, unsigned int cutoff_to);
 void bitboards_to_fen(char *fen);
 #endif

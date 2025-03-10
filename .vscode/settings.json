@@ -2,6 +2,7 @@
   "files.associations": {
     "MoveGeneratorTest.C": "cpp",
     "stdio.h": "c",
-    "types.h": "c"
+    "types.h": "c",
+    "xiosbase": "c"
   }
 }

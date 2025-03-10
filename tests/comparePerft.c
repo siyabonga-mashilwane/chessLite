@@ -41,26 +41,27 @@ void compare_results(MoveNode *moves1, int count1, MoveNode *moves2, int count2)
         int cmp = strcmp(moves1[i].move, moves2[j].move);
         if (cmp == 0) {
             if (moves1[i].nodes != moves2[j].nodes) {
-                printf("Difference in nodes for move %s: %llu (Your Perft) vs %llu (Stockfish)\n", moves1[i].move, moves1[i].nodes, moves2[j].nodes);
+                
+                printf("Difference in nodes for move %s %llu (Your Perft) vs %llu (Stockfish)\n", moves1[i].move, moves1[i].nodes, moves2[j].nodes);
             }
             i++;
             j++;
         } else if (cmp < 0) {
-            printf("Move %s: %llu (Your Perft) vs N/A (Stockfish)\n", moves1[i].move, moves1[i].nodes);
+            printf("Move %s %llu (Your Perft) vs N/A (Stockfish)\n", moves1[i].move, moves1[i].nodes);
             i++;
         } else {
-            printf("Move %s: N/A (Your Perft) vs %llu (Stockfish)\n", moves2[j].move, moves2[j].nodes);
+            printf("Move %s N/A (Your Perft) vs %llu (Stockfish)\n", moves2[j].move, moves2[j].nodes);
             j++;
         }
     }
 
     while (i < count1) {
-        printf("Move %s: %llu (Your Perft) vs N/A (Stockfish)\n", moves1[i].move, moves1[i].nodes);
+        printf("Move %s %llu (Your Perft) vs N/A (Stockfish)\n", moves1[i].move, moves1[i].nodes);
         i++;
     }
 
     while (j < count2) {
-        printf("Move %s: N/A (Your Perft) vs %llu (Stockfish)\n", moves2[j].move, moves2[j].nodes);
+        printf("Move %s N/A (Your Perft) vs %llu (Stockfish)\n", moves2[j].move, moves2[j].nodes);
         j++;
     }
 }
@@ -69,8 +70,8 @@ int main() {
     MoveNode moves1[MAX_MOVES], moves2[MAX_MOVES];
     int count1, count2;
 
-    read_file("chesslite.txt", moves1, &count1);
-    read_file("stockfish.txt", moves2, &count2);
+    read_file("C:/Users/siyabonga/Documents/GitHub/chessLite/tests/chesslite.txt", moves1, &count1);
+    read_file("C:/Users/siyabonga/Documents/GitHub/chessLite/tests/stockfish.txt", moves2, &count2);
 
     compare_results(moves1, count1, moves2, count2);
 

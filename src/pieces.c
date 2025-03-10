@@ -125,12 +125,12 @@ representing all the black pieces on the board or all the white pieces on the bo
 U64 get_side_bitboard(Colour side){
     U64 bitboard = 0;
     if(side == white){
-        for (Square i = K; i <= P; i++)
+        for (Square i = (Square)K; i <= (Square)P; i++)
         {
             bitboard |= bitboard_pieces[i];
         }
     }else if(side == black){
-        for (Square i = k; i <= p; i++)
+        for (Square i = (Square)k; i <= (Square)p; i++)
         {
             bitboard |= bitboard_pieces[i];
         }
@@ -464,22 +464,22 @@ static U64 bishop_mask_generator(int index){
     //all the +9 bits from the current index
     for (i = r+1, j = f+1; i <= 6 && j<=6; i++, j++)
     {
-        mask |= (1ULL << i*8 + j);
+        mask |= (1ULL << (i*8 + j));
     }
     //all the +7 bits from the current index
     for (i = r+1, j = f-1; i <= 6 && j>0; i++, j--)
     {
-        mask |= (1ULL << i*8 + j);
+        mask |= (1ULL << (i*8 + j));
     }
     //all the -7 bits from the current index
     for (i = r-1, j = f+1; i > 0 && j<=6; i--, j++)
     {
-        mask |= (1ULL << i*8 + j);
+        mask |= (1ULL << (i*8 + j));
     }
     //all the -9 bits from the current index
     for (i = r-1, j = f-1; i > 0 && j > 0; i--, j--)
     {
-        mask |= (1ULL << i*8 + j);
+        mask |= (1ULL << (i*8 + j));
     }
     return mask;
 
@@ -579,19 +579,19 @@ static U64 rook_mask_generator(int index){
     int i,j;
     for (i = r+1; i < 7; i++)
     {
-        mask |= (1ULL << i*8 + f);
+        mask |= (1ULL << (i*8 + f));
     }
     for (i = r-1; i > 0; i--)
     {
-        mask |= (1ULL << i*8 + f);
+        mask |= (1ULL << (i*8 + f));
     }
     for (j = f+1; j < 7; j++)
     {
-        mask |= (1ULL << r*8 + j);
+        mask |= (1ULL << (r*8 + j));
     }
     for (j = f-1; j > 0; j--)
     {
-        mask |= (1ULL << r*8 + j);
+        mask |= (1ULL << (r*8 + j));
     }
     return mask;
 }
@@ -721,6 +721,16 @@ void init_magic_attacks(U64 rook_magics[], U64 bishop_magics[]){
 }*/
 
 //Functions that need re-considering in terms of where they should actually be
+const char* square_to_coordinates[64] = {
+    "h1" , "g1", "f1", "e1", "d1", "c1", "b1", "a1",
+    "h2" , "g2", "f2", "e2", "d2", "c2", "b2", "a2",
+    "h3" , "g3", "f3", "e3", "d3", "c3", "b3", "a3",
+    "h4" , "g4", "f4", "e4", "d4", "c4", "b4", "a4",
+    "h5" , "g5", "f5", "e5", "d5", "c5", "b5", "a5",
+    "h6" , "g6", "f6", "e6", "d6", "c6", "b6", "a6",
+    "h7" , "g7", "f7", "e7", "d7", "c7", "b7", "a7",
+    "h8" , "g8", "f8", "e8", "d8", "c8", "b8", "a8"
+};
 void print_chessboard(){
     HANDLE cons = GetStdHandle(STD_OUTPUT_HANDLE);
     printf("\n");
@@ -751,9 +761,17 @@ void print_chessboard(){
     }
     printf("\n");
     printf("     a  b  c  d  e  f  g  h  \n");
-    printf("    ------------------------");
+    printf("    ------------------------ \n");
+    printf("\t Side to move: %s \n", side == white ? "White" : "Black");
+    printf("\t Enpessant: %s \n", enpessant == no_sq ? "No" : square_to_coordinates[enpessant]);
     printf("\n");
 
+}
+
+unsigned int coordinate_to_square(char* coordinate){
+    int file = (int)(7 - (coordinate[0] - 'a'));
+    int rank = (int)(coordinate[1] - '1');
+    return (rank * 8 + file);
 }
 
 void print_pieces(){
@@ -761,16 +779,7 @@ void print_pieces(){
         print_matrix(bitboard_pieces[i]);
     }
 }
-const char* square_to_coordinates[64] = {
-    "h1" , "g1", "f1", "e1", "d1", "c1", "b1", "a1",
-    "h2" , "g2", "f2", "e2", "d2", "c2", "b2", "a2",
-    "h3" , "g3", "f3", "e3", "d3", "c3", "b3", "a3",
-    "h4" , "g4", "f4", "e4", "d4", "c4", "b4", "a4",
-    "h5" , "g5", "f5", "e5", "d5", "c5", "b5", "a5",
-    "h6" , "g6", "f6", "e6", "d6", "c6", "b6", "a6",
-    "h7" , "g7", "f7", "e7", "d7", "c7", "b7", "a7",
-    "h8" , "g8", "f8", "e8", "d8", "c8", "b8", "a8"
-};
+
 
 
 //Note: the colours of the pieces have been switched because of the black backround of the console they dont appear properly hence the colours had to be switched
@@ -809,7 +818,7 @@ int char_pieces[] = {
 //An extensive FEN parser function
 void fen_parser(const char* fen){
     memset(bitboard_pieces, 0, sizeof(bitboard_pieces)); // Clear bitboards
-    enpessant = 0;
+    enpessant = no_sq;
     half_moves = 0;
     full_moves = 0;
     const char* ptr = fen;
@@ -905,7 +914,7 @@ void fen_parser(const char* fen){
     if(strlen(c1) > 0){
         
         //Simply break down the square from string coordinate into an interger coordinate by normalising the characters into a range we can exploit 
-        enpessant = ((int)(c1[0] - 'a') + (int)(c1[1] - '1')*8);
+        enpessant = coordinate_to_square(c1);
     }
     //Skip past the enpessant
     while (*ptr && *ptr == ' ') {
@@ -1123,8 +1132,14 @@ void absolute_pins(Pinned_pieces *pinned_pieces,Square kingSq, U64* blockers, U6
     while (opponent_queens)
     {
         Square queenSq = debruijn_BitScan(opponent_queens);
-        if(is_pawn && enpessant != no_sq){
-            occupied ^= get_bit(occupied, enpessant);
+        //check if the queen is attacking the king in horizontal direction
+        if(is_pawn && (enpessant != no_sq)){
+            U64 ray = get_in_between(kingSq, queenSq);
+            U64 king = 1ULL << kingSq;
+            U64 left_of_king = (king << 1)&notHFile;
+            U64 right_of_king = (king >> 1)&notAFile;
+            bool is_horizontal = ((left_of_king & ray) || (right_of_king & ray))? true: false;
+            if(is_horizontal) occupied ^= get_bit(occupied, (side==white)?enpessant-8:enpessant+8);
         }
         U64 mask = ((1ULL << kingSq) & (xray_bishop(*blockers, occupied, queenSq) | xray_rook(*blockers, occupied, queenSq))) ? get_in_between(kingSq, queenSq) : 0ULL;
         
@@ -1145,8 +1160,14 @@ void absolute_pins(Pinned_pieces *pinned_pieces,Square kingSq, U64* blockers, U6
     while (opponent_rooks)
     {
         Square rookSq = debruijn_BitScan(opponent_rooks);
-        if(is_pawn && enpessant != no_sq){
-            occupied ^= get_bit(occupied, enpessant);
+        //check if the rook is attacking the king in horizontal direction
+        if(is_pawn && (enpessant != no_sq)){
+            U64 ray = get_in_between(kingSq, rookSq);
+            U64 king = 1ULL << kingSq;
+            U64 left_of_king = (king << 1)&notHFile;
+            U64 right_of_king = (king >> 1)&notAFile;
+            bool is_horizontal = ((left_of_king & ray) || (right_of_king & ray))? true: false;
+            if(is_horizontal) occupied ^= get_bit(occupied, (side==white)?enpessant-8:enpessant+8);
         }
         U64 mask = ((1ULL << kingSq) & xray_rook(*blockers, occupied, rookSq)) ? get_in_between(kingSq, rookSq) : 0ULL;
         U64 pinned_square = *blockers & mask;
@@ -1183,7 +1204,7 @@ void absolute_pins(Pinned_pieces *pinned_pieces,Square kingSq, U64* blockers, U6
 }
 
 // Generate is a move generator function
-void generate(Colour side, Moves *movelist){
+void generate(Moves *movelist){
     U64 opponent_piece_attacks[6]; // Array to store attacks by each type of opponent piece
     //These arrays are used to keep tabs on positions of opponent pieces, the last index is used for numer of pieces
     //int queens[11]; // maximum number of queens in a gamre per player is 9
@@ -1289,7 +1310,6 @@ void generate(Colour side, Moves *movelist){
 
     U64 push_mask = create_empty_squares(0ULL); //Push anywhere
     U64 capture_mask = create_empty_squares(0ULL); // Capture anything/anywhere
-    U64 enpessant_check_mask = 0ULL; //No enpessant captures can be allowed
 
     // sliding piece checks:
     //  - qeeen check
@@ -1303,11 +1323,12 @@ void generate(Colour side, Moves *movelist){
             //Check if found queen is the checker
             if(queen_magic_attack(destination, get_game()) & get_king(side)){
                 push_mask = get_in_between(from_square, destination);
-                capture_mask = 1ULL << destination;
+                capture_mask = (1ULL << destination);
+                no_checks++;
             }
             reset_lsb(queen);
         }
-        no_checks++;
+        
     }
     //  - bishop check
     ///printf("Genereating bishop check\n");
@@ -1320,11 +1341,12 @@ void generate(Colour side, Moves *movelist){
             //Check if found bishop is the checker
             if(bishop_magic_attack(destination, get_game()) & get_king(side)){
                 push_mask = get_in_between(from_square, destination);
-                capture_mask = 1ULL << destination;
+                capture_mask = (1ULL << destination);
+                no_checks++;
             }
             reset_lsb(bishop);
         }
-        no_checks++;
+        
     }
     //  - Rook check
     ///printf("Genereating rook check\n");
@@ -1339,11 +1361,12 @@ void generate(Colour side, Moves *movelist){
             //Check if found queen is the checker
             if(rook_magic_attack(destination, get_game()) & get_king(side)){
                 push_mask = get_in_between(from_square, destination);
-                capture_mask = 1ULL << destination;
+                capture_mask = (1ULL << destination);
+                no_checks++;
             } 
             reset_lsb(rook);
         }
-        no_checks++;
+        
     }
     // Knight piece checks:
     ///printf("Genereating knight check\n");
@@ -1357,11 +1380,12 @@ void generate(Colour side, Moves *movelist){
             //Check if found knight is the checker
             if(get_knight_attack(destination) & get_king(side)){
                 push_mask = 0ULL; //Cant block a knight check
-                capture_mask = 1ULL << destination;
+                capture_mask = (1ULL << destination);
+                no_checks++;
             }
             reset_lsb(knight);
         }
-        no_checks++;
+        
     }
 
     // pawn piece checks:
@@ -1370,10 +1394,9 @@ void generate(Colour side, Moves *movelist){
     {
         who_is_checking |= 16;
         //Evaluate if it is an enpessant check
-        enpessant_check_mask = (get_king_target(from_square, (1ULL << enpessant)))? (1ULL << enpessant): 0ULL;
         push_mask = 0;
         U64 opponent_pawns = get_pawn(opponent_side);
-        capture_mask =(side == white)? (get_pawn_attack(white,from_square) & opponent_pawns) : (get_pawn_attack(black,from_square) & opponent_pawns);
+        capture_mask = get_pawn_attack(side,from_square) & opponent_pawns;
         no_checks++;
     }
     ///printf("generate king quite moves\n"); 
@@ -1382,13 +1405,13 @@ void generate(Colour side, Moves *movelist){
     ///print_matrix(create_empty_squares(all_opponent_attacks | get_game()));
     ///print_matrix( king_attacks[from_square] );
     ///print_matrix(king_quiet_moves);
-    (king_quiet_moves) ? encode_quiet_moves(movelist,pieces_by_color[side][0],king_quiet_moves, from_square, side): (void)0;
+    (king_quiet_moves) ? encode_quiet_moves(movelist,pieces_by_color[side][0],king_quiet_moves, from_square): (void)0;
     //generate King captures, which may capture checking piece
     U64 protected_pieces = get_side_bitboard(opponent_side) & all_opponent_attacks; // Check if the pieces to capture are protected
     U64 king_capture_moves = get_side_bitboard(opponent_side) ^ protected_pieces; // Remove all the protected pieces from the king potential attack
     //king_capture_moves = king_capture_moves & get_king_target(from_square, create_empty_squares(get_side_bitboard(side))); //Remove king allies(pieces) from the capture moves
     king_capture_moves = get_king_target(from_square, king_capture_moves);
-    encode_captures(movelist, pieces_by_color[side][0], king_capture_moves, from_square, side);
+    encode_captures(movelist, pieces_by_color[side][0], king_capture_moves, from_square);
 
     if(no_checks > 1){
         ///printf("The king is in check \n"); 
@@ -1414,11 +1437,14 @@ void generate(Colour side, Moves *movelist){
     U64 pawns = get_pawn(side);
     Pinned_pieces pinned_pawns;
     init_pinned_pieces(&pinned_pawns);
+    
     ///printf("Generating absolute pins \n");
     absolute_pins(&pinned_pawns, king_square, &pawns, get_game(), get_queen(opponent_side), get_bishop(opponent_side), get_rook(opponent_side), pieces_by_color[side][5], true);
     // generate quiet pawn pushes
     U64 single_push = (side == white)? wSinglePush(pawns, create_empty_squares(get_game())) : bSinglePush(pawns, create_empty_squares(get_game()));
     single_push &= push_mask;
+
+
     U64 double_push = (side == white)? wDoublePush(pawns, create_empty_squares(get_game())) : bDoublePush(pawns, create_empty_squares(get_game()));
     double_push &= push_mask;
     //genereate double pushes
@@ -1438,7 +1464,7 @@ void generate(Colour side, Moves *movelist){
         to_square = debruijn_BitScan(single_push); //Only filter out legal moves
         int rank = to_square/8;
         from_square = (side == white)? to_square - 8 : to_square + 8;
-        if((side == white) && (rank == 7) || (side == black) && (rank == 0)){
+        if(((side == white) && (rank == 7)) || ((side == black) && (rank == 0))){
             //Promotions
             add_move(movelist, encode(from_square, to_square, pieces_by_color[side][5] , 8, 0));
             add_move(movelist, encode(from_square, to_square, pieces_by_color[side][5] , 9, 0));
@@ -1459,7 +1485,7 @@ void generate(Colour side, Moves *movelist){
         attacks &= create_empty_squares(get_side_bitboard(side));
         
         //printf("Withing encode captures");
-        encode_captures(movelist, pieces_by_color[side][5], attacks, from_square, side);
+        encode_captures(movelist, pieces_by_color[side][5], attacks, from_square);
         //printf("After encode captures");
         reset_lsb(pawns);
     }
@@ -1478,14 +1504,15 @@ void generate(Colour side, Moves *movelist){
     absolute_pins(&pinned_knights, king_square, &knights, get_game(), get_queen(opponent_side), get_bishop(opponent_side), get_rook(opponent_side), pieces_by_color[side][3], false);
     
     ///printf("Generating knight attacks \n");
+   
     while (knights)
     {
         from_square = debruijn_BitScan(knights);
-        U64 attacks = get_knight_attack(from_square) & capture_mask;
-        U64 quiets = (attacks & create_empty_squares(get_game())) & push_mask;
-        (quiets) ? encode_quiet_moves(movelist, pieces_by_color[side][3], quiets, from_square, side): (void)0 ;
-        attacks &= (get_side_bitboard(opponent_side) & capture_mask);
-        (attacks) ? encode_captures(movelist, pieces_by_color[side][3], attacks, from_square, side): (void)0 ;
+        U64 knight_moves = get_knight_attack(from_square);
+        U64 attacks = (knight_moves & get_side_bitboard(opponent_side)) & capture_mask;
+        U64 quiets = (knight_moves & create_empty_squares(get_game())) & push_mask;
+        (quiets) ? encode_quiet_moves(movelist, pieces_by_color[side][3], quiets, from_square): (void)0 ;
+        (attacks) ? encode_captures(movelist, pieces_by_color[side][3], attacks, from_square): (void)0 ;
         reset_lsb(knights);
     }
     
@@ -1500,9 +1527,9 @@ void generate(Colour side, Moves *movelist){
         from_square = debruijn_BitScan(bishops);
         U64 attacks = bishop_magic_attack(from_square, get_game());
         U64 quiets = (attacks & create_empty_squares(get_game())) & push_mask;
-        (quiets) ? encode_quiet_moves(movelist, pieces_by_color[side][2], quiets, from_square, side): (void)0 ;
+        (quiets) ? encode_quiet_moves(movelist, pieces_by_color[side][2], quiets, from_square): (void)0 ;
         attacks &= (get_side_bitboard(opponent_side) & capture_mask);
-        (attacks) ? encode_captures(movelist, pieces_by_color[side][2], attacks, from_square, side): (void)0 ;
+        (attacks) ? encode_captures(movelist, pieces_by_color[side][2], attacks, from_square): (void)0 ;
         reset_lsb(bishops);
     }
     
@@ -1511,9 +1538,9 @@ void generate(Colour side, Moves *movelist){
         from_square = pinned_bishops.pieces[i].pinned_square;
         U64 attacks = bishop_magic_attack(from_square, get_game());
         U64 quiets = (attacks & create_empty_squares(get_game())) & push_mask & pinned_bishops.pieces[i].piece_push_mask;
-        (quiets) ? encode_quiet_moves(movelist, pieces_by_color[side][2], quiets, from_square, side): (void)0 ;
+        (quiets) ? encode_quiet_moves(movelist, pieces_by_color[side][2], quiets, from_square): (void)0 ;
         attacks &= (get_side_bitboard(opponent_side) & capture_mask & pinned_bishops.pieces[i].piece_capture_mask);
-        (attacks) ? encode_captures(movelist, pieces_by_color[side][2], attacks, from_square, side): (void)0 ;
+        (attacks) ? encode_captures(movelist, pieces_by_color[side][2], attacks, from_square): (void)0 ;
     }
     
     //generate rook attacks
@@ -1527,9 +1554,9 @@ void generate(Colour side, Moves *movelist){
         from_square = debruijn_BitScan(rooks);
         U64 attacks = rook_magic_attack(from_square, get_game());
         U64 quiets = (attacks & create_empty_squares(get_game())) & push_mask;
-        (quiets) ? encode_quiet_moves(movelist, pieces_by_color[side][4], quiets, from_square, side): (void)0 ;
+        (quiets) ? encode_quiet_moves(movelist, pieces_by_color[side][4], quiets, from_square): (void)0 ;
         attacks &= (get_side_bitboard(opponent_side) & capture_mask);
-        (attacks) ? encode_captures(movelist, pieces_by_color[side][4], attacks, from_square, side): (void)0 ;
+        (attacks) ? encode_captures(movelist, pieces_by_color[side][4], attacks, from_square): (void)0 ;
         reset_lsb(rooks);
     }
     
@@ -1539,9 +1566,9 @@ void generate(Colour side, Moves *movelist){
         from_square = pinned_rooks.pieces[i].pinned_square;
         U64 attacks = rook_magic_attack(from_square, get_game());
         U64 quiets = (attacks & create_empty_squares(get_game())) & push_mask & pinned_rooks.pieces[i].piece_push_mask;
-        (quiets) ? encode_quiet_moves(movelist, pieces_by_color[side][4], quiets, from_square, side): (void)0 ;
+        (quiets) ? encode_quiet_moves(movelist, pieces_by_color[side][4], quiets, from_square): (void)0 ;
         attacks &= (get_side_bitboard(opponent_side) & capture_mask & pinned_rooks.pieces[i].piece_capture_mask);
-        (attacks) ? encode_captures(movelist, pieces_by_color[side][4], attacks, from_square, side): (void)0 ;
+        (attacks) ? encode_captures(movelist, pieces_by_color[side][4], attacks, from_square): (void)0 ;
     }
     
     //generate queen attacks
@@ -1556,10 +1583,10 @@ void generate(Colour side, Moves *movelist){
         U64 attacks = queen_magic_attack(from_square, get_game());
         ///print_matrix(attacks);
         U64 quiets = (attacks & create_empty_squares(get_game())) & push_mask;
-        (quiets) ? encode_quiet_moves(movelist, pieces_by_color[side][1], quiets, from_square, side): (void)0 ;
+        (quiets) ? encode_quiet_moves(movelist, pieces_by_color[side][1], quiets, from_square): (void)0 ;
         attacks &= (get_side_bitboard(opponent_side) & capture_mask);
         
-        (attacks) ? encode_captures(movelist, pieces_by_color[side][1], attacks, from_square, side): (void)0 ;
+        (attacks) ? encode_captures(movelist, pieces_by_color[side][1], attacks, from_square): (void)0 ;
         reset_lsb(queens);
     }
     //generate attacks for queen pinned pieces
@@ -1568,10 +1595,10 @@ void generate(Colour side, Moves *movelist){
         from_square = pinned_queens.pieces[i].pinned_square;
         U64 attacks = queen_magic_attack(from_square, get_game());
         U64 quiets = (attacks & create_empty_squares(get_game())) & push_mask & pinned_queens.pieces[i].piece_push_mask;
-        (quiets) ? encode_quiet_moves(movelist, pieces_by_color[side][1], quiets, from_square, side): (void)0 ;
+        (quiets) ? encode_quiet_moves(movelist, pieces_by_color[side][1], quiets, from_square): (void)0 ;
         attacks &= (get_side_bitboard(opponent_side) & capture_mask & pinned_queens.pieces[i].piece_capture_mask);
         
-        (attacks) ? encode_captures(movelist, pieces_by_color[side][1], attacks, from_square, side): (void)0 ;
+        (attacks) ? encode_captures(movelist, pieces_by_color[side][1], attacks, from_square): (void)0 ;
     }
 
     /*
@@ -1643,12 +1670,13 @@ void generate_pinned_pawn_moves(Colour side,Moves* movelist, Pinned_pieces* pinn
 
         // Generate pawn captures
         U64 attacks = get_pawn_attack(side, from_square) & piece_capture_mask & capture_mask;
-        attacks ^= get_side_bitboard(side);
-        encode_captures(movelist, pieces_by_color[side][5], attacks, from_square, side);
+        U64 my_attacked_piece = attacks & get_side_bitboard(side);
+        attacks ^= my_attacked_piece;
+        encode_captures(movelist, pieces_by_color[side][5], attacks, from_square);
     }
 }
 
-void encode_quiet_moves(Moves *movelist, Pieces piece, U64 quiet_moves, int from_square, Colour side){
+void encode_quiet_moves(Moves *movelist, Pieces piece, U64 quiet_moves, int from_square){
     while (quiet_moves)
     {
         int to_square = debruijn_BitScan(quiet_moves);
@@ -1657,7 +1685,7 @@ void encode_quiet_moves(Moves *movelist, Pieces piece, U64 quiet_moves, int from
     }
 }
 //This function is used to check pieces we are capturing then encode the relevant information
-void encode_captures(Moves *movelist, Pieces piece, U64 piece_attacks, int from_square, Colour side){
+void encode_captures(Moves *movelist, Pieces piece, U64 piece_attacks, int from_square){
     Colour opponent_side = side ^ 1;
     ///printf(" \n \t ENCODING CAPTURES FOR %d \n", piece);
     while(piece_attacks){
@@ -1691,17 +1719,14 @@ void encode_captures(Moves *movelist, Pieces piece, U64 piece_attacks, int from_
             if( (piece ==  P && to_square/8 == 7) || (piece ==  p && to_square/8 == 0))     promo_capture = pieces_by_color[opponent_side][4];
             else add_move(movelist, encode(from_square, to_square, piece, flags, pieces_by_color[opponent_side][4]));
         }else if(attack & get_pawn(opponent_side)){
-            add_move(movelist, encode(from_square, to_square, piece, flags, (int)pieces_by_color[opponent_side][5]));
-        }
-        //Handle all attacking opponent pawn
-        //  - Handle enpessant
-        else if( piece == P && (to_square - 8) == enpessant){
-            flags = 5; //turn on the enpessant capture flag
+            
             add_move(movelist, encode(from_square, to_square, piece, flags, pieces_by_color[opponent_side][5]));
         }
-        else if( piece == p && (to_square + 8) == enpessant){
-            flags = 5; //turn on the enpessant capture flag
+        //Hadle pawn enpessant capture
+        else if((piece == (Pieces)P || piece == (Pieces)p) && (to_square == enpessant)){
+            flags = 5;
             add_move(movelist, encode(from_square, to_square, piece, flags, pieces_by_color[opponent_side][5]));
+
         }
         //promotion captures
         if(promo_capture != no_piece ){
@@ -1732,7 +1757,7 @@ void print_generated_moves(Moves* movelist){
 
 
 
-Move_History make_move(unsigned int move, Colour side){
+Move_History make_move(unsigned int move){
     //Preserve the original state before copying editing the moves
     Move_History prev_state;
     memcpy(prev_state.bitboard_pieces_copy, bitboard_pieces, sizeof(bitboard_pieces));
@@ -1746,13 +1771,15 @@ Move_History make_move(unsigned int move, Colour side){
     Square from_square = get_source(move);
     Square to_square = get_target(move);
     Pieces piece = get_piece(move);
+    //update the game states
+    enpessant = no_sq;
 
     if(get_captured_piece(move) == pieces_by_color[side^1][4]){
         //remove castling rights of the opponent if rook is captured
-        (from_square == h1) ? castle &= ~(wk): (0);
-        (from_square == a1) ? castle &= ~(wq): (0);
-        (from_square == h8) ? castle &= ~(bk): (0);
-        (from_square == a8) ? castle &= ~(bq): (0);
+        (to_square == h1) ? castle &= ~(wk): (0);
+        (to_square == a1) ? castle &= ~(wq): (0);
+        (to_square == h8) ? castle &= ~(bk): (0);
+        (to_square == a8) ? castle &= ~(bq): (0);
     }
     if(piece == pieces_by_color[side][4]){
         //remove castling rights of the player if rook is moved
@@ -1781,7 +1808,7 @@ Move_History make_move(unsigned int move, Colour side){
         case 1: // Handle double push pawns
             bitboard_pieces[piece] ^= (1ULL << from_square);
             bitboard_pieces[piece] |= (1ULL << to_square);
-            enpessant = to_square;
+            enpessant = (side == white) ? (to_square - 8) : (to_square + 8);
             break;
 
         case 2: // Kingside castling
@@ -1860,11 +1887,11 @@ Move_History make_move(unsigned int move, Colour side){
             bitboard_pieces[pieces_by_color[side][1]] |= (1ULL << to_square);
             break;
 
-        case 5: // handle en passant
+        case 5: // handle en passant capture
             bitboard_pieces[piece] ^= (1ULL << from_square);
             bitboard_pieces[piece] |= (1ULL << to_square);
-            bitboard_pieces[get_captured_piece(move)] ^= (1ULL << enpessant);
-            enpessant = no_sq;
+            int captured_enpessant = (side == white) ? (to_square - 8) : (to_square + 8);
+            bitboard_pieces[get_captured_piece(move)] ^= (1ULL << captured_enpessant);
             break;
         default:
             printf("Invalid move flag %d \n", flags);
@@ -2003,11 +2030,11 @@ U64 Perft(int depth)
 
     if (depth == 0) 
         return 1ULL;
-    generate(side, &movelist);
+    generate(&movelist);
     n_moves = movelist.count;
     //printf("Generated %d moves at depth %d, side is %s\n", n_moves, depth, (side==white?"white":"black:"));
     for (i = 0; i < n_moves; i++) {
-        Move_History prev_move = make_move(movelist.moves[i], side);
+        Move_History prev_move = make_move(movelist.moves[i]);
         nodes += Perft(depth-1);
         unmake_move(&prev_move);
     }
@@ -2015,7 +2042,7 @@ U64 Perft(int depth)
     return nodes;
 }
 
-U64 Divide(int depth)
+U64 Divide(int depth, unsigned int cutoff_from, unsigned int cutoff_to)
 {
     Moves movelist;
 
@@ -2026,32 +2053,53 @@ U64 Divide(int depth)
     U64 nodes = 0;
     if (depth == 0) 
         return 1ULL;
-    generate(side, &movelist);
+    generate(&movelist);
     n_moves = movelist.count;
     //printf("Generated %d moves at depth %d, side is %s\n", n_moves, depth, (side==white?"white":"black:"));
     
     for (i = 0; i < n_moves; i++) {
-        Move_History prev_move = make_move(movelist.moves[i], side);
+        Move_History prev_move = make_move(movelist.moves[i]);
         U64 moves = Perft(depth-1);
         nodes += moves;
         
-        int from = get_source(movelist.moves[i]);
-        int to = get_target(movelist.moves[i]);
-        /*if(from == e1 && to == f1){
-            print_chessboard();
-            Moves temp;
-            temp.count = 0;
-            memset(temp.moves, 0, sizeof(temp.moves));
-            generate(side^1, &temp);
-            printf("number of moves %d\n", temp.count);
+        unsigned int from = get_source(movelist.moves[i]);
+        unsigned int to = get_target(movelist.moves[i]);
+        if(from == cutoff_from && to == cutoff_to){
+
+            FILE* f = fopen("C:/Users/siyabonga/Documents/GitHub/chessLite/tests/FENResults.txt", "w");
+            if (f == NULL)
+            {
+                printf("Error opening file!\n");
+                exit(1);
+            }
             char fen[100];
             bitboards_to_fen(fen);
-            printf("\n%s\n",fen);
-            print_generated_moves(&temp);
-            printf("\n---------------------------------------------\n");
-        }*/
-        printf("%s%s: %llu \n", square_to_coordinates[from], square_to_coordinates[to], moves);
+            fprintf(f, fen);
+            fclose(f);
+        }
         
+        //Print promotions
+       switch (get_flags(movelist.moves[i])) {
+            case 8:
+            case 12:
+                printf("%s%sn: %llu \n", square_to_coordinates[from], square_to_coordinates[to], moves);
+                break;
+            case 9:
+            case 13:
+                printf("%s%sb: %llu \n", square_to_coordinates[from], square_to_coordinates[to], moves);
+                break;
+            case 10:
+            case 14:
+                printf("%s%sr: %llu \n", square_to_coordinates[from], square_to_coordinates[to], moves);
+                break;
+            case 11:
+            case 15:
+                printf("%s%sq: %llu \n", square_to_coordinates[from], square_to_coordinates[to], moves);
+                break;
+            default:
+                printf("%s%s: %llu \n", square_to_coordinates[from], square_to_coordinates[to], moves);
+                break;
+        }        
         unmake_move(&prev_move);
     }
     
@@ -2108,8 +2156,9 @@ void bitboards_to_fen(char *fen) {
     if (enpessant == no_sq) {
         fen[index++] = '-';
     } else {
-        fen[index++] = 'a' + (enpessant % 8);
-        fen[index++] = '1' + (enpessant / 8);
+        const char* square = square_to_coordinates[enpessant];
+        fen[index++] = square[0];
+        fen[index++] = square[1];
     }
 
     // Halfmove clock
