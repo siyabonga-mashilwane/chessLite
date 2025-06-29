@@ -5,6 +5,14 @@ typedef unsigned long long U64;
 #define BOARDS_SQUARES  64
 #define ROOK_COMBINATIONS 4096
 #define BISHOP_COMBINATIONS 512
+
+#define get_bit(bitboard, square) ((bitboard) & (1ULL << square))
+#define pop_bit(bitboard, square) (get_bit((bitboard), square) ? ((bitboard) ^= (1ULL << square)) : 0)
+#define set_bit(bitboard, square) ((bitboard) |= (1ULL << square))
+#define create_empty_squares(bitboard) (~(bitboard)) //will produce a bitboard of empty spaces on the bitboard.
+#define reset_lsb(bitboard) ((bitboard) &= ((bitboard) - 1))
+
+
 //setting up the proper square data type for the chess board
 typedef enum {
     h1, g1, f1, e1, d1, c1, b1, a1,

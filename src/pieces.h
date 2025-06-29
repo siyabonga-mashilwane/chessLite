@@ -27,6 +27,7 @@ static inline int debruijn_BitScan(U64 bitboard){
     return debruijn_hash[((bitboard & -bitboard) * debruijn_number) >> 58];
 }
 
+
 int bitCount(U64 val); //change to inline and remove it from the header
 //A function that initialises all pre-calculated data
 void init();
@@ -68,6 +69,9 @@ void set_r(U64 r);
 void set_p(U64 p);
 
 void set_game(U64 val);
+// Returns a pointer to an array of U64 bitboards
+U64* get_bitboard_pieces();
+int get_side(); // Returns the current side, 0 for white and 1 for black
 
 //The following are the masks of move generators
 extern const U64 notAFile;

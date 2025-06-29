@@ -10,11 +10,6 @@
 #include <windows.h>
 
 
-#define get_bit(bitboard, square) ((bitboard) & (1ULL << square))
-#define pop_bit(bitboard, square) (get_bit((bitboard), square) ? ((bitboard) ^= (1ULL << square)) : 0)
-#define set_bit(bitboard, square) ((bitboard) |= (1ULL << square))
-#define create_empty_squares(bitboard) (~(bitboard)) //will produce a bitboard of empty spaces on the bitboard.
-
 
 //Static function prototypes
 static U64 kingMoveTargetsHelper(U64 king);
@@ -72,6 +67,14 @@ void init(){
     init_pawn_attacks();
     init_knight_attacks();
     init_in_between();
+}
+
+U64* get_bitboard_pieces(){
+    return bitboard_pieces;
+}
+
+int get_side(){
+    return side;
 }
 //Getters and setters for the game state and chess pieces
 U64 get_K(){
@@ -1119,7 +1122,6 @@ U64 xray_bishop(U64 blockers, U64 occupied, Square bishopSq){
 #define get_piece(move) ( ((move) & 0xf000) >> 12 )
 #define get_flags(move) ( ((move) & 0xf0000) >> 16 )
 #define get_captured_piece(move) ( ((move) & 0xF00000) >> 20 )
-#define reset_lsb(bitboard) ((bitboard) &= ((bitboard) - 1))
 #define get_pawn(side) ( bitboard_pieces[pieces_by_color[side][5]] )
 #define get_rook(side) ( bitboard_pieces[pieces_by_color[side][4]] )
 #define get_knight(side) ( bitboard_pieces[pieces_by_color[side][3]] )

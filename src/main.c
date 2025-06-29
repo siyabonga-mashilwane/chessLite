@@ -6,6 +6,7 @@
 #include <omp.h>
 #include <locale.h>
 #include <string.h>
+#include "evaluation.h"
 
 
 
@@ -77,6 +78,9 @@ int main(int argc, char *argv[]){
         print_chessboard();
         printf("\n");
     }
+    U64* bitboard_pieces = get_bitboard_pieces();
+    Colour side = get_side();
+    printf("\n The Evaluation Score is:  %d \n", evaluate(bitboard_pieces, side));
     //fen_parser("r3k2r/p1ppqpb1/bn2pnp1/1B1PN3/1p2P3/2N2Q1p/PPPB1PPP/R3K2R b KQkq - 0 1");
     /*print_chessboard();
     Moves temp;
@@ -85,7 +89,7 @@ int main(int argc, char *argv[]){
     generate(white, &temp);
     printf("number of moves %d\n", temp.count);
     print_generated_moves(&temp);*/
-    printf("\nNodes searched: %llu \n", Divide(depth, cutoff_from, cutoff_to));
+    //printf("\nNodes searched: %llu \n", Divide(depth, cutoff_from, cutoff_to));
     
     return 0;
 }
@@ -93,4 +97,5 @@ int main(int argc, char *argv[]){
 /*"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1"
 "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1"
 "r3k2r/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b KQkq - 0 1"
-"r3k2r/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b KQkq - 0 1"*/
+"r3k2r/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b KQkq - 0 1"
+"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b KQkq - 0 1"*/

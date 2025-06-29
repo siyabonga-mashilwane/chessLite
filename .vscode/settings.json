@@ -3,6 +3,7 @@
     "MoveGeneratorTest.C": "cpp",
     "stdio.h": "c",
     "types.h": "c",
-    "xiosbase": "c"
+    "xiosbase": "c",
+    "stdlib.h": "c"
   }
 }
